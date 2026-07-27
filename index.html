@@ -465,6 +465,10 @@ footer{border-top:1px solid #E2E9DE}
   width:100%; height:100%; object-fit:contain; display:block;
   filter:drop-shadow(0 7px 12px rgba(18,58,44,.22));
 }
+/* foto yang latarnya tak bisa dipisah: tampil penuh sebagai kartu foto */
+.hero-art .chip.solid{padding:0; background:none}
+.hero-art .chip.solid img{object-fit:cover; border-radius:26px; filter:none}
+.thumb img.cut[src*="carrier"]{object-fit:cover; padding:0}
 @keyframes reelSlide{from{transform:translate3d(0,0,0)} to{transform:translate3d(-50%,0,0)}}
 @keyframes chipBob{
   0%,100%{transform:translateY(0) rotate(-1.4deg)}
@@ -535,6 +539,40 @@ footer{border-top:1px solid #E2E9DE}
   main{padding-bottom:96px}
   footer{padding-bottom:104px}
   .toasts{bottom:96px}
+}
+
+/* ---------- TAMPILAN BARANG DI PONSEL ---------- */
+@media (max-width:640px){
+  .grid{grid-template-columns:1fr; gap:12px}
+  .grid .card.hoverable{
+    display:grid; grid-template-columns:126px 1fr; align-items:stretch;
+    border-radius:20px; overflow:hidden;
+  }
+  .grid .card.hoverable .thumb{aspect-ratio:1/1; height:100%; border-radius:0}
+  .grid .card.hoverable .thumb .tags{left:6px; top:6px; gap:4px}
+  .grid .card.hoverable .thumb .tags .tag{font-size:10.5px; padding:2px 7px}
+  .grid .card.hoverable .thumb .tags .tag.o{display:none}
+  .grid .card.hoverable .thumb .fav{width:30px; height:30px; font-size:15px; right:6px; top:6px}
+  .grid .card.hoverable .thumb .catref{display:none}
+  .grid .card.hoverable .thumb img.cut{padding:7%}
+  .grid .card.hoverable .body{padding:12px 14px 12px 13px; gap:5px}
+  .grid .card.hoverable h4{
+    font-size:15.5px; line-height:1.28; display:-webkit-box;
+    -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .grid .card.hoverable .meta{font-size:12px}
+  .grid .card.hoverable .value{font-size:15.5px}
+  .grid .card.hoverable .value span{display:none}
+  .grid .card.hoverable .wants,.grid .card.hoverable .match{
+    font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .grid .card.hoverable .foot{gap:6px; margin-top:8px}
+  .grid .card.hoverable .foot .btn{min-height:38px; padding:0 8px; font-size:13px}
+  .grid .card.hoverable .foot .btn:not(.primary){flex:0 0 78px}
+  .grid .card.hoverable:active{transform:scale(.985); transition:transform .12s}
+  /* label tab bawah cukup satu kata, tidak lagi terpotong */
+  .bottomnav button{font-size:11.5px; padding:7px 1px}
+  .bottomnav button .tl{text-overflow:clip; letter-spacing:-.01em}
 }
 
 /* logo menyatu dengan latar, tanpa kotak putih */
@@ -652,7 +690,7 @@ const CAT_PHOTO = {
 const REEL_A = ["carrier","tenda","sepatu","sleepingbag","daypack"];
 const REEL_B = ["masak","headlamp","trekkingpole","jashujan","matras"];
 function heroReel(){
-  const chip = n => '<span class="chip"><img src="assets/kategori/'+n+'.webp" loading="lazy" alt=""></span>';
+  const chip = n => '<span class="chip'+(n==="carrier"?" solid":"")+'"><img src="assets/kategori/'+n+'.webp" loading="lazy" alt=""></span>';
   const row = list => { const r = list.map(chip).join(""); return r + r; };
   return '<div class="reel"><div class="reel-track">'+row(REEL_A)+'</div></div>'
        + '<div class="reel rev"><div class="reel-track">'+row(REEL_B)+'</div></div>';
@@ -1251,11 +1289,11 @@ function regBlock(me){
 /* ---------- router ---------- */
 const state = {tab:"beranda", q:"", cat:"Semua", cond:"Semua", city:"Semua", vmax:0, sort:"baru", box:"masuk", openOffer:null};
 const TABS = [
-  {id:"beranda", label:"Beranda"},
-  {id:"cocok", label:"Cocok untukmu"},
-  {id:"penawaran", label:"Penawaran"},
-  {id:"tambah", label:"Tambah barang"},
-  {id:"profil", label:"Profil"}
+  {id:"beranda", label:"Beranda", short:"Beranda"},
+  {id:"cocok", label:"Cocok untukmu", short:"Cocok"},
+  {id:"penawaran", label:"Penawaran", short:"Tawaran"},
+  {id:"tambah", label:"Tambah barang", short:"Tambah"},
+  {id:"profil", label:"Profil", short:"Profil"}
 ];
 function go(tab){ state.tab = tab; render(); window.scrollTo({top:0,behavior:"smooth"}); }
 
@@ -1266,15 +1304,15 @@ const TAB_ICONS = {
   tambah:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg>',
   profil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.5"/><path d="M4.8 20c0-3.5 3.2-5.6 7.2-5.6s7.2 2.1 7.2 5.6"/></svg>'
 };
-function tabsHtml(){
+function tabsHtml(useShort){
   const n = incoming().filter(o=>openStatuses.includes(o.status)).length;
   return TABS.map(t=>
-    '<button role="tab" aria-selected="'+(state.tab===t.id)+'" onclick="go(\''+t.id+'\')">'
-    + (TAB_ICONS[t.id]||'') + '<span class="tl">'+t.label+'</span>'
+    '<button role="tab" aria-selected="'+(state.tab===t.id)+'" title="'+t.label+'" aria-label="'+t.label+'" onclick="go(\''+t.id+'\')">'
+    + (TAB_ICONS[t.id]||'') + '<span class="tl">'+(useShort ? t.short : t.label)+'</span>'
     + (t.id==="penawaran" && n ? '<span class="badge">'+n+'</span>' : '') + '</button>').join("");
 }
 function renderTabs(){
-  const html = tabsHtml();
+  const html = tabsHtml(false);
   const top = document.getElementById("tabs");
   const bot = document.getElementById("bottomNav");
   if(top){
@@ -1282,7 +1320,7 @@ function renderTabs(){
     /* tandai kalau deretan tab masih bisa digeser ke samping */
     setTimeout(()=>{ top.classList.toggle("scrollable", top.scrollWidth > top.clientWidth + 4); }, 0);
   }
-  if(bot) bot.innerHTML = html;
+  if(bot) bot.innerHTML = tabsHtml(true);
 }
 
 /* ---------- views ---------- */
