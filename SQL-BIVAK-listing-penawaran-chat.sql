@@ -821,9 +821,26 @@ function resetAll(){ localStorage.removeItem(KEY); db = load(); go(state.tab); t
 const prof = id => db.profiles.find(p=>p.id===id) || {name:"?", city:"-", reputation:0};
 const listing = id => db.listings.find(l=>l.id===id);
 const myListings = () => db.listings.filter(l=>l.ownerId===ME);
-const incoming = () => db.offers.filter(o=>{const t=listing(o.targetListingId); return t && t.ownerId===ME});
-const outgoing = () => db.offers.filter(o=>o.proposerId===ME);
 const openStatuses = ["Diajukan","Negosiasi","Disetujui"];
+/* Boleh menawar barang yang sama beberapa kali, asalkan barang yang ditawarkan berbeda. */
+function itemSetKey(items){
+  return (items||[]).map(i=>i.listingId).sort().join(",");
+}
+function offerKey(o){
+  return [o.proposerId,o.targetListingId,itemSetKey(o.items)].join("|");
+}
+function uniqueOffers(rows){
+  const seen = new Set();
+  return rows.filter(o=>{
+    /* Riwayat selesai/ditolak tetap utuh; hanya penawaran aktif ganda yang disaring. */
+    if(!openStatuses.includes(o.status)) return true;
+    const key = offerKey(o);
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+const incoming = () => uniqueOffers(db.offers.filter(o=>{const t=listing(o.targetListingId); return t && t.ownerId===ME}));
+const outgoing = () => uniqueOffers(db.offers.filter(o=>o.proposerId===ME));
 const pillClass = s => ({"Diajukan":"b","Negosiasi":"o","Disetujui":"p","Selesai":"g","Ditolak":"r","Dibatalkan":"r","Tidak terpilih":""}[s]||"");
 function offerValue(o){ return o.items.reduce((a,i)=>a+i.valueSnapshot,0); }
 function matchReason(l){
@@ -1829,9 +1846,18 @@ function submitOffer(){
   const t = listing(pick.targetId);
   if(t.status!=="aktif"){ toast("Listing sedang dicadangkan","warn"); return; }
   const note = (document.getElementById("note").value||"").trim();
+  const proposedItems = pick.items.map(id=>({listingId:id, valueSnapshot:listing(id).appraisedValue}));
+  const wanted = itemSetKey(proposedItems);
+  const duplicate = db.offers.find(x=>x.proposerId===ME && x.targetListingId===t.id
+    && openStatuses.includes(x.status) && itemSetKey(x.items)===wanted);
+  if(duplicate){
+    closeSheet(); state.box="terkirim"; go("penawaran");
+    toast("Barang ini sudah kamu tawarkan untuk listing tersebut · pakai tombol Edit atau pilih barang lain","warn");
+    return;
+  }
   const o = {
     id:nid("o"), targetListingId:t.id, proposerId:ME,
-    items:pick.items.map(id=>({listingId:id, valueSnapshot:listing(id).appraisedValue})),
+    items:proposedItems,
     cashAdjustment:pick.cash, note, status:"Diajukan", createdAt:Date.now(),
     messages:[
       {id:nid("m"), from:ME, body: note || "Saya ajukan barter untuk barang ini.", at:Date.now()},
