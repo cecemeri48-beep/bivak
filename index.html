@@ -689,6 +689,8 @@ async function cloudPull(){
     }
     save();
   }catch(err){}
+  const me = meProfile();
+  if(me && me.isModerator) await cloudPullReports();
   cloudRealtime();
 }
 
@@ -716,6 +718,60 @@ function rtSync(kind){
     if(kind==="pesan" && after > before) toast("Ada pesan baru");
     if(kind==="penawaran") toast("Daftar penawaran diperbarui");
   }, 600);
+}
+
+/* ---- panel moderasi ---- */
+let modReports = [];
+async function cloudPullReports(){
+  if(!cloudOn()) return;
+  try{
+    const {data} = await sb.from("barter_reports").select("*").order("created_at", {ascending:false}).limit(50);
+    modReports = data || [];
+  }catch(err){}
+}
+async function modSetReport(id, status){
+  if(!cloudOn()) return;
+  try{
+    const {error} = await sb.from("barter_reports").update({status}).eq("id", id);
+    if(error){ toast("Gagal memperbarui laporan: "+error.message, "warn"); return; }
+    await cloudPullReports(); render(); toast("Laporan ditandai \u201c"+status+"\u201d", "ok");
+  }catch(err){}
+}
+async function modHoldListing(listingId, hold){
+  if(!cloudOn()) return;
+  try{
+    const {error} = await sb.from("barter_listings").update({status: hold ? "ditahan" : "aktif"}).eq("id", listingId);
+    if(error){ toast("Gagal mengubah listing: "+error.message, "warn"); return; }
+    await cloudPull(); render();
+    toast(hold ? "Listing ditahan dari peredaran" : "Listing diaktifkan kembali", hold ? "warn" : "ok");
+  }catch(err){}
+}
+function modBlock(me){
+  if(!me || !me.isModerator) return "";
+  const baru = modReports.filter(r=>r.status==="baru").length;
+  const rows = modReports.map(r=>{
+    const l = listing(r.target_id);
+    const judul = l ? esc(l.title) : "Listing sudah tidak ada";
+    const pemilik = l ? esc(prof(l.ownerId).name) : "—";
+    const ditahan = l && l.status==="ditahan";
+    return `<div class="card pad" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <span class="pill ${r.status==="baru"?"o":r.status==="ditutup"?"g":"b"}">${esc(r.status)}</span>
+        <b>${judul}</b>
+        <span style="color:var(--muted);font-size:13px">· pemilik ${pemilik}</span>
+      </div>
+      <div style="color:var(--muted);font-size:14px">${esc(r.reason||"Tanpa keterangan")}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${l?`<button class="btn sm" onclick="openDetail('${r.target_id}')">Lihat barang</button>`:""}
+        ${l?`<button class="btn sm" onclick="modHoldListing('${r.target_id}', ${ditahan?"false":"true"})">${ditahan?"Aktifkan kembali":"Tahan listing"}</button>`:""}
+        ${r.status!=="ditinjau"?`<button class="btn sm" onclick="modSetReport('${r.id}','ditinjau')">Tandai ditinjau</button>`:""}
+        ${r.status!=="ditutup"?`<button class="btn sm" onclick="modSetReport('${r.id}','ditutup')">Tutup laporan</button>`:""}
+      </div>
+    </div>`;
+  }).join("");
+  return `<div class="section-head"><div><h2>Panel moderasi</h2><p>Laporan dari anggota komunitas. ${baru} laporan baru menunggu ditinjau.</p></div></div>
+    ${modReports.length? `<div style="display:flex;flex-direction:column;gap:12px;margin-bottom:24px">${rows}</div>`
+      : `<div class="card pad" style="margin-bottom:24px;color:var(--muted)">Belum ada laporan masuk. Bagus, komunitas sedang sehat.</div>`}`;
 }
 
 async function uploadPhoto(blob){
@@ -788,6 +844,7 @@ async function syncProfileFromServer(){
     if(typeof data.rating === "number") me.rating = data.rating;
     if(typeof data.deals_count === "number") me.deals = data.deals_count;
     if(typeof data.verified === "boolean") me.verified = data.verified;
+    if(typeof data.is_moderator === "boolean") me.isModerator = data.is_moderator;
     if(me.city && !CITIES.includes(me.city)) CITIES.push(me.city);
     save();
   }catch(err){}
@@ -1260,6 +1317,7 @@ function viewProfil(){
       </div>
     </div>
     ${regBlock(me)}
+    ${modBlock(me)}
     <div class="section-head"><div><h2>Barang saya</h2><p>Kelola listing, arsipkan yang sudah tidak tersedia.</p></div></div>
     ${mine.length? `<div class="grid">${mine.map(l=>`<article class="card">
       <div class="thumb">${thumbOf(l)}<div class="tags"><span class="tag b">${esc(l.category)}</span><span class="tag ${l.status==="aktif"?"g":l.status==="dicadangkan"?"o":""}">${l.status}</span></div></div>
