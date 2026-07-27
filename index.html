@@ -388,7 +388,7 @@ footer .row{display:flex; justify-content:space-between; gap:16px; flex-wrap:wra
 const CATS = ["Carrier","Tas daypack","Sepatu gunung","Sleeping bag","Tenda","Matras","Trekking pole","Headlamp","Jas hujan","Perlengkapan memasak"];
 const CITIES = ["Makassar","Gowa","Maros","Takalar","Sinjai"];
 const CONDS = ["Baru","Seperti baru","Bekas terawat","Bekas layak pakai"];
-const ME = "u1";
+let ME = "u1";
 const KEY = "bivak.v1";
 
 const rp = n => "Rp" + (n||0).toLocaleString("id-ID");
@@ -548,6 +548,17 @@ function saveAuth(u){ try{ localStorage.setItem(AUTHKEY, JSON.stringify(u)); }ca
 
 function setUser(u){
   auth.user = u; auth.status = "ready"; saveAuth(u);
+  if(u.id && ME !== u.id){
+    const old = ME; ME = u.id;
+    const seedProfile = db.profiles.find(x=>x.id===old);
+    if(/^u\d+$/.test(old) && seedProfile && !db.profiles.some(x=>x.id===u.id)){
+      seedProfile.id = u.id;
+      db.listings.forEach(l=>{ if(l.ownerId===old) l.ownerId = u.id; });
+      db.offers.forEach(o=>{ if(o.proposerId===old) o.proposerId = u.id; (o.messages||[]).forEach(m=>{ if(m.from===old) m.from = u.id; }); });
+    }
+    if(!db.profiles.some(x=>x.id===u.id)) db.profiles.push({id:u.id, name:u.name||"Anggota baru", city:"", reputation:0, deals:0, verified:false});
+    save();
+  }
   const me = meProfile();
   if(me){
     if(u.email) me.email = u.email;
@@ -611,6 +622,100 @@ async function signOut(){
   render();
 }
 
+/* ---- sinkron listing, penawaran, dan chat dengan Supabase ---- */
+const isUuid = s => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(s||""));
+function nid(p){
+  if(sb && auth.user && auth.user.id && window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return uid(p);
+}
+const cloudOn = () => !!(sb && auth.user && auth.user.id);
+
+function listingToRow(l){
+  return {id:l.id, owner_id:l.ownerId, title:l.title, category:l.category, condition:l.condition,
+    appraised_value:Math.round(l.appraisedValue||0), city:l.city, description:l.description||"",
+    wants:l.wants||[], status:l.status||"aktif", photos:l.photos||[],
+    created_at:new Date(l.createdAt||Date.now()).toISOString()};
+}
+function rowToListing(r){
+  return {id:r.id, ownerId:r.owner_id, title:r.title, category:r.category, condition:r.condition,
+    appraisedValue:Number(r.appraised_value||0), city:r.city||"", description:r.description||"",
+    wants:r.wants||[], status:r.status||"aktif", photos:r.photos||[],
+    createdAt:new Date(r.created_at||Date.now()).getTime(), favorite:false, remote:true};
+}
+function offerToRow(o){
+  return {id:o.id, target_listing_id:o.targetListingId, proposer_id:o.proposerId,
+    items:o.items||[], cash_adjustment:Math.round(o.cashAdjustment||0), note:o.note||"",
+    status:o.status||"Diajukan", created_at:new Date(o.createdAt||Date.now()).toISOString()};
+}
+
+async function cloudPull(){
+  if(!cloudOn()) return;
+  try{
+    const [pr, lr, or_] = await Promise.all([
+      sb.from("barter_profiles_public").select("*"),
+      sb.from("barter_listings").select("*").order("created_at", {ascending:false}),
+      sb.from("barter_offers").select("*").order("created_at", {ascending:false})
+    ]);
+    if(pr.data) pr.data.forEach(r=>{
+      let p = db.profiles.find(x=>x.id===r.id);
+      if(!p){ p = {id:r.id}; db.profiles.push(p); }
+      p.name = r.display_name || p.name || "Anggota BIVAK";
+      p.city = r.city || p.city || "";
+      p.reputation = Number(r.rating || p.reputation || 0);
+      p.deals = Number(r.deals_count || p.deals || 0);
+      p.verified = !!r.verified;
+    });
+    if(lr.data){
+      const favs = new Set(db.listings.filter(l=>l.favorite).map(l=>l.id));
+      db.listings = db.listings.filter(l=>!l.remote).concat(lr.data.map(r=>{
+        const l = rowToListing(r); l.favorite = favs.has(l.id); return l;
+      }));
+      db.listings.sort((a,b)=>b.createdAt-a.createdAt);
+    }
+    if(or_.data){
+      const ids = or_.data.map(r=>r.id);
+      let msgs = [];
+      if(ids.length){
+        const mr = await sb.from("barter_messages").select("*").in("offer_id", ids).order("at", {ascending:true});
+        msgs = mr.data || [];
+      }
+      db.offers = db.offers.filter(o=>!o.remote).concat(or_.data.map(r=>({
+        id:r.id, targetListingId:r.target_listing_id, proposerId:r.proposer_id,
+        items:r.items||[], cashAdjustment:Number(r.cash_adjustment||0), note:r.note||"",
+        status:r.status||"Diajukan", createdAt:new Date(r.created_at||Date.now()).getTime(), remote:true,
+        messages:msgs.filter(m=>m.offer_id===r.id).map(m=>({id:m.id, from:m.from_id || m.from_label || "sys", body:m.body||"", at:new Date(m.at||Date.now()).getTime()}))
+      })));
+    }
+    save();
+  }catch(err){}
+}
+
+async function cloudSaveListing(l){
+  if(!cloudOn() || !l || !isUuid(l.id) || l.ownerId !== auth.user.id) return;
+  try{
+    const {error} = await sb.from("barter_listings").upsert(listingToRow(l));
+    if(error) toast("Listing belum tersimpan ke server: "+error.message, "warn");
+  }catch(err){}
+}
+async function cloudSaveOffer(o){
+  if(!cloudOn() || !o || !isUuid(o.id)) return;
+  try{
+    const {error} = await sb.from("barter_offers").upsert(offerToRow(o));
+    if(error) toast("Penawaran belum tersimpan ke server: "+error.message, "warn");
+  }catch(err){}
+}
+async function cloudSaveMessage(offerId, m){
+  if(!cloudOn() || !m || !isUuid(offerId) || !isUuid(m.id)) return;
+  try{
+    await sb.from("barter_messages").upsert({
+      id:m.id, offer_id:offerId,
+      from_id: isUuid(m.from) ? m.from : null,
+      from_label: isUuid(m.from) ? null : String(m.from||"sys"),
+      body:m.body||"", at:new Date(m.at||Date.now()).toISOString()
+    });
+  }catch(err){}
+}
+
 /* ---- sinkron profil dengan tabel barter_profiles di Supabase ---- */
 const P2R = {fullName:"full_name", name:"display_name", phone:"phone", address:"address", city:"city", province:"province", postal:"postal_code", landmark:"landmark", email:"email"};
 
@@ -629,6 +734,7 @@ async function syncProfileFromServer(){
     if(me.city && !CITIES.includes(me.city)) CITIES.push(me.city);
     save();
   }catch(err){}
+  await cloudPull();
 }
 
 async function saveProfileToServer(me){
@@ -1058,12 +1164,13 @@ function submitListing(ev){
   const val = +g("v");
   if(!val || val < 10000){ toast("Nilai taksasi minimal Rp10.000","warn"); return; }
   const l = {
-    id:uid("l"), ownerId:ME, title:g("t").trim(), category:g("c"), condition:g("k"),
+    id:nid("l"), ownerId:ME, title:g("t").trim(), category:g("c"), condition:g("k"),
     appraisedValue:val, city:g("kt"), description:g("d").trim(), status:"aktif",
     photos:draftPhotos.slice(0,3), favorite:false, createdAt:Date.now(),
     wants:[{category:g("wc"), keyword:g("wk").trim(), min:+g("wmin")||0, max:+g("wmax")||0}]
   };
   db.listings.unshift(l); save(); draftPhotos = [];
+  cloudSaveListing(l);
   toast("Listing dipublikasikan · status Aktif","ok");
   go("profil");
 }
@@ -1109,8 +1216,8 @@ function viewProfil(){
 
 /* ---------- aksi listing ---------- */
 function toggleFav(id){ const l=listing(id); l.favorite=!l.favorite; save(); render(); toast(l.favorite?"Ditambahkan ke favorit":"Dihapus dari favorit"); }
-function archive(id){ listing(id).status="arsip"; save(); render(); toast("Listing diarsipkan"); }
-function unarchive(id){ listing(id).status="aktif"; save(); render(); toast("Listing aktif kembali","ok"); }
+function archive(id){ const l=listing(id); l.status="arsip"; save(); render(); cloudSaveListing(l); toast("Listing diarsipkan"); }
+function unarchive(id){ const l=listing(id); l.status="aktif"; save(); render(); cloudSaveListing(l); toast("Listing aktif kembali","ok"); }
 function report(id){
   db.reports.push({id:uid("r"), reporterId:ME, targetType:"listing", targetId:id, reason:"Perlu ditinjau moderator", status:"baru"});
   save(); toast("Laporan dikirim ke moderator BIVAK","warn");
@@ -1207,15 +1314,16 @@ function submitOffer(){
   if(t.status!=="aktif"){ toast("Listing sedang dicadangkan","warn"); return; }
   const note = (document.getElementById("note").value||"").trim();
   const o = {
-    id:uid("o"), targetListingId:t.id, proposerId:ME,
+    id:nid("o"), targetListingId:t.id, proposerId:ME,
     items:pick.items.map(id=>({listingId:id, valueSnapshot:listing(id).appraisedValue})),
     cashAdjustment:pick.cash, note, status:"Diajukan", createdAt:Date.now(),
     messages:[
-      {id:uid("m"), from:ME, body: note || "Saya ajukan barter untuk barang ini.", at:Date.now()},
-      {id:uid("m"), from:"sys", body:"Penawaran diajukan · menunggu respons pemilik", at:Date.now()}
+      {id:nid("m"), from:ME, body: note || "Saya ajukan barter untuk barang ini.", at:Date.now()},
+      {id:nid("m"), from:"sys", body:"Penawaran diajukan · menunggu respons pemilik", at:Date.now()}
     ]
   };
   db.offers.unshift(o); save(); closeSheet();
+  cloudSaveOffer(o); o.messages.forEach(m=>cloudSaveMessage(o.id, m));
   state.box = "terkirim"; go("penawaran");
   toast("Penawaran terkirim ke "+prof(t.ownerId).name,"ok");
 }
@@ -1290,11 +1398,12 @@ function sendMsg(id){
   const inp = document.getElementById("msg"), body = inp.value.trim();
   if(!body) return;
   const o = db.offers.find(x=>x.id===id);
-  o.messages.push({id:uid("m"), from:ME, body, at:Date.now()});
+  o.messages.push({id:nid("m"), from:ME, body, at:Date.now()});
   if(o.status==="Diajukan") o.status = "Negosiasi";
   save(); openOffer(id);
+  cloudSaveMessage(o.id, o.messages[o.messages.length-1]); cloudSaveOffer(o);
   const other = listing(o.targetListingId).ownerId===ME ? o.proposerId : listing(o.targetListingId).ownerId;
-  setTimeout(()=>{
+  if(!cloudOn()) setTimeout(()=>{
     const cur = db.offers.find(x=>x.id===id);
     if(!cur || ["Ditolak","Dibatalkan","Selesai"].includes(cur.status)) return;
     const replies = ["Siap, saya cek dulu kondisinya ya.","Bisa. Bagaimana kalau bertemu di Karebosi Sabtu pagi?","Kalau selisihnya bisa dibulatkan, saya setuju.","Boleh kirim foto tambahan bagian jahitan?"];
@@ -1306,7 +1415,7 @@ function sendMsg(id){
 function setStatus(id, status){
   const o = db.offers.find(x=>x.id===id), t = listing(o.targetListingId);
   o.status = status;
-  o.messages.push({id:uid("m"), from:"sys", body:"Status penawaran berubah menjadi "+status, at:Date.now()});
+  o.messages.push({id:nid("m"), from:"sys", body:"Status penawaran berubah menjadi "+status, at:Date.now()});
   if(status==="Disetujui"){
     t.status = "dicadangkan";
     o.items.forEach(i=>{ const l=listing(i.listingId); if(l) l.status="dicadangkan"; });
@@ -1327,6 +1436,8 @@ function setStatus(id, status){
     toast("Penawaran "+status.toLowerCase()+" · listing kembali aktif","warn");
   }
   save(); openOffer(id); renderTabs();
+  cloudSaveOffer(o); cloudSaveMessage(o.id, o.messages[o.messages.length-1]);
+  cloudSaveListing(t); o.items.forEach(i=>{ const l = listing(i.listingId); if(l) cloudSaveListing(l); });
 }
 
 setChrome(false);
