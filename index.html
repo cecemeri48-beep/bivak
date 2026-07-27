@@ -432,6 +432,44 @@ h1{
 .toast.warn{background:linear-gradient(135deg,#C47130,#DFA13C)}
 footer{border-top:1px solid #E2E9DE}
 
+/* ---------- NAVIGASI: tab atas + bilah bawah di layar kecil ---------- */
+.appbar .tabs button{display:inline-flex; align-items:center; gap:7px}
+.appbar .tabs button svg{width:18px; height:18px; flex:0 0 auto}
+.appbar .tabs.scrollable{
+  -webkit-mask-image:linear-gradient(90deg,#000 84%,rgba(0,0,0,.2) 100%);
+  mask-image:linear-gradient(90deg,#000 84%,rgba(0,0,0,.2) 100%);
+}
+.bottomnav{display:none}
+@media (max-width:1200px){
+  .appbar .tabs{display:none !important}
+  .bottomnav{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:50; gap:2px;
+    background:rgba(255,255,255,.97); backdrop-filter:blur(12px);
+    border-top:1px solid #D8E7DD; box-shadow:0 -8px 24px rgba(15,122,90,.12);
+    padding:6px 6px calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+  .bottomnav button{
+    flex:1 1 0; min-width:0; position:relative; border:0; background:none; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+    padding:7px 2px; border-radius:14px; color:var(--muted); font-size:11px; font-weight:700;
+    letter-spacing:.01em; transition:.15s;
+  }
+  .bottomnav button svg{width:23px; height:23px}
+  .bottomnav button .tl{
+    max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+  }
+  .bottomnav button[aria-selected="true"]{background:var(--mint); color:var(--pine-dark)}
+  .bottomnav button[aria-selected="true"] svg{stroke-width:2.1}
+  .bottomnav .badge{
+    position:absolute; top:2px; left:50%; margin-left:6px; min-width:17px; padding:0 5px;
+    border-radius:999px; background:linear-gradient(135deg,#E0553F,#E8863C); color:#fff;
+    font-size:10.5px; font-weight:700; line-height:17px; text-align:center;
+  }
+  main{padding-bottom:96px}
+  footer{padding-bottom:104px}
+  .toasts{bottom:96px}
+}
+
 /* logo menyatu dengan latar, tanpa kotak putih */
 .logo-sq{background:transparent; border:0; box-shadow:none}
 .logo-sq img{width:100%; height:100%}
@@ -463,6 +501,8 @@ footer{border-top:1px solid #E2E9DE}
 </header>
 
 <div id="view"></div>
+
+<nav class="bottomnav" id="bottomNav" role="tablist" aria-label="Navigasi utama"></nav>
 
 <footer>
   <div class="wrap row" style="align-items:center">
@@ -654,7 +694,7 @@ function profileComplete(p){ return !!(p && p.registeredAt && REQUIRED_PROFILE.e
 function gateOk(){ return auth.status==="ready" && !auth.edit && profileComplete(meProfile()); }
 
 function setChrome(show){
-  document.querySelectorAll(".appbar .tabs, .appbar .btn.primary, .appbar .me").forEach(el=>{ el.style.display = show ? "" : "none"; });
+  document.querySelectorAll(".appbar .tabs, .appbar .btn.primary, .appbar .me, .bottomnav").forEach(el=>{ el.style.display = show ? "" : "none"; });
   const f = document.querySelector("footer"); if(f) f.style.display = show ? "" : "none";
 }
 function loadAuth(){ try{ return JSON.parse(localStorage.getItem(AUTHKEY)||"null"); }catch(e){ return null; } }
@@ -1125,11 +1165,30 @@ const TABS = [
 ];
 function go(tab){ state.tab = tab; render(); window.scrollTo({top:0,behavior:"smooth"}); }
 
-function renderTabs(){
+const TAB_ICONS = {
+  beranda:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4l8 6.6V20a1 1 0 0 1-1 1h-4.2v-5.8H9.2V21H5a1 1 0 0 1-1-1z"/></svg>',
+  cocok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l1.9 4.8L17.7 9.7l-4.8 1.9L11 16.4 9.1 11.6 4.3 9.7l4.8-1.9z"/><path d="M18 15.4l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>',
+  penawaran:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h13M13.5 5.5l3 3-3 3"/><path d="M20.5 15.5h-13M10.5 12.5l-3 3 3 3"/></svg>',
+  tambah:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg>',
+  profil:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8.2" r="3.5"/><path d="M4.8 20c0-3.5 3.2-5.6 7.2-5.6s7.2 2.1 7.2 5.6"/></svg>'
+};
+function tabsHtml(){
   const n = incoming().filter(o=>openStatuses.includes(o.status)).length;
-  document.getElementById("tabs").innerHTML = TABS.map(t=>
-    '<button role="tab" aria-selected="'+(state.tab===t.id)+'" onclick="go(\''+t.id+'\')">'+t.label
+  return TABS.map(t=>
+    '<button role="tab" aria-selected="'+(state.tab===t.id)+'" onclick="go(\''+t.id+'\')">'
+    + (TAB_ICONS[t.id]||'') + '<span class="tl">'+t.label+'</span>'
     + (t.id==="penawaran" && n ? '<span class="badge">'+n+'</span>' : '') + '</button>').join("");
+}
+function renderTabs(){
+  const html = tabsHtml();
+  const top = document.getElementById("tabs");
+  const bot = document.getElementById("bottomNav");
+  if(top){
+    top.innerHTML = html;
+    /* tandai kalau deretan tab masih bisa digeser ke samping */
+    setTimeout(()=>{ top.classList.toggle("scrollable", top.scrollWidth > top.clientWidth + 4); }, 0);
+  }
+  if(bot) bot.innerHTML = html;
 }
 
 /* ---------- views ---------- */
