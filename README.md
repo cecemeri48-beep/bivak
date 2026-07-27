@@ -68,3 +68,24 @@ Tombol **Reset data contoh** di Beranda mengembalikan seluruh data prototipe ke 
 - BIVAK **bukan escrow**: aplikasi tidak memproses pembayaran dan tidak menjamin pengiriman.
 - Nilai taksasi adalah referensi negosiasi dalam Rupiah, bukan saldo/dompet digital.
 - Ilustrasi barang dibuat dengan SVG dari kode; foto asli bisa diunggah lewat form Tambah barang.
+
+## Login Google + Form Pendaftaran (baru)
+
+Saat dibuka, BIVAK sekarang menampilkan **gerbang masuk**:
+
+1. Halaman **Masuk dengan Google**.
+2. Setelah masuk, **form pendaftaran wajib** (nama lengkap, nama tampilan, no. HP/WhatsApp, tanggal lahir, alamat lengkap, kota/kabupaten, provinsi, kode pos, patokan, persetujuan aturan).
+3. Aplikasi baru bisa dipakai setelah form selesai. Data bisa diubah lagi dari tab **Profil > Ubah data pendaftaran**.
+
+### Mengaktifkan login Google sungguhan
+
+Buka `index.html`, cari bagian `AUTH (Login Google)` di dalam `<script>` lalu isi:
+
+```js
+const SUPABASE_URL = "https://xxxxxxxx.supabase.co";
+const SUPABASE_ANON_KEY = "eyJ...";
+```
+
+Di dashboard Supabase: **Authentication > Providers > Google** (isi Client ID/Secret dari Google Cloud Console), lalu tambahkan URL situs (mis. `https://namauser.github.io/bivak-app/`) ke **Site URL** dan **Redirect URLs**.
+
+Jika kedua konstanta dibiarkan kosong, aplikasi berjalan dalam **mode demo lokal**: login disimulasikan dan data pendaftaran hanya tersimpan di `localStorage` perangkat itu.
