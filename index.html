@@ -562,10 +562,11 @@ async function initAuth(){
     try{
       const {createClient} = await import("https://esm.sh/@supabase/supabase-js@2");
       sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      sb.auth.onAuthStateChange((_e, session)=>{
+      sb.auth.onAuthStateChange(async (_e, session)=>{
         if(session && session.user){
           const u = session.user;
-          setUser({email:u.email, name:(u.user_metadata||{}).full_name || (u.user_metadata||{}).name || ""});
+          setUser({id:u.id, email:u.email, name:(u.user_metadata||{}).full_name || (u.user_metadata||{}).name || ""});
+          await syncProfileFromServer();
         }else{
           auth.status = "anon"; auth.user = null;
         }
@@ -574,7 +575,8 @@ async function initAuth(){
       const {data} = await sb.auth.getSession();
       if(data && data.session && data.session.user){
         const u = data.session.user;
-        setUser({email:u.email, name:(u.user_metadata||{}).full_name || (u.user_metadata||{}).name || ""});
+        setUser({id:u.id, email:u.email, name:(u.user_metadata||{}).full_name || (u.user_metadata||{}).name || ""});
+          await syncProfileFromServer();
       }else{ auth.status = "anon"; }
     }catch(err){
       auth.mode = "demo"; auth.status = "anon";
@@ -607,6 +609,40 @@ async function signOut(){
   auth.user = null; auth.status = "anon"; auth.edit = false;
   toast("Kamu sudah keluar");
   render();
+}
+
+/* ---- sinkron profil dengan tabel barter_profiles di Supabase ---- */
+const P2R = {fullName:"full_name", name:"display_name", phone:"phone", address:"address", city:"city", province:"province", postal:"postal_code", landmark:"landmark", email:"email"};
+
+async function syncProfileFromServer(){
+  if(!sb || !auth.user || !auth.user.id) return;
+  const me = meProfile(); if(!me) return;
+  try{
+    const {data, error} = await sb.from("barter_profiles").select("*").eq("id", auth.user.id).maybeSingle();
+    if(error || !data) return;
+    Object.keys(P2R).forEach(k=>{ const v = data[P2R[k]]; if(v!==null && v!==undefined && v!=="") me[k] = v; });
+    if(data.birth_date) me.birth = String(data.birth_date).slice(0,10);
+    if(data.registered_at) me.registeredAt = new Date(data.registered_at).getTime();
+    if(typeof data.rating === "number") me.rating = data.rating;
+    if(typeof data.deals_count === "number") me.deals = data.deals_count;
+    if(typeof data.verified === "boolean") me.verified = data.verified;
+    if(me.city && !CITIES.includes(me.city)) CITIES.push(me.city);
+    save();
+  }catch(err){}
+}
+
+async function saveProfileToServer(me){
+  if(!sb || !auth.user || !auth.user.id) return false;
+  const row = {id: auth.user.id};
+  Object.keys(P2R).forEach(k=>{ row[P2R[k]] = me[k] || null; });
+  row.birth_date = me.birth || null;
+  row.registered_at = new Date(me.registeredAt || Date.now()).toISOString();
+  row.updated_at = new Date().toISOString();
+  try{
+    const {error} = await sb.from("barter_profiles").upsert(row);
+    if(error){ toast("Tersimpan di perangkat, gagal ke server: "+error.message, "warn"); return false; }
+    return true;
+  }catch(err){ toast("Tersimpan di perangkat, server tidak terjangkau", "warn"); return false; }
 }
 
 function editProfile(){ auth.edit = true; render(); window.scrollTo({top:0,behavior:"smooth"}); }
@@ -671,7 +707,7 @@ function gateForm(){
   </main>`;
 }
 
-function submitRegistration(e){
+async function submitRegistration(e){
   e.preventDefault();
   const g = id => { const el = document.getElementById(id); return el ? String(el.value||"").trim() : ""; };
   const phone = g("regPhone").replace(/[^0-9+]/g,"");
@@ -694,7 +730,9 @@ function submitRegistration(e){
   });
   if(me.city && !CITIES.includes(me.city)) CITIES.push(me.city);
   auth.edit = false; save();
-  toast(first ? "Pendaftaran selesai · selamat barter!" : "Data pendaftaran diperbarui", "ok");
+  const synced = await saveProfileToServer(me);
+  toast(first ? (synced ? "Pendaftaran selesai · data tersimpan di server" : "Pendaftaran selesai · selamat barter!")
+              : (synced ? "Data pendaftaran diperbarui di server" : "Data pendaftaran diperbarui"), "ok");
   go(first ? "beranda" : "profil");
 }
 
@@ -1048,6 +1086,7 @@ function viewProfil(){
         <span class="stat" style="background:var(--soft)"><b>${favs.length}</b> favorit</span>
       </div>
     </div>
+    ${regBlock(me)}
     <div class="section-head"><div><h2>Barang saya</h2><p>Kelola listing, arsipkan yang sudah tidak tersedia.</p></div></div>
     ${mine.length? `<div class="grid">${mine.map(l=>`<article class="card">
       <div class="thumb">${thumbOf(l)}<div class="tags"><span class="tag b">${esc(l.category)}</span><span class="tag ${l.status==="aktif"?"g":l.status==="dicadangkan"?"o":""}">${l.status}</span></div></div>
