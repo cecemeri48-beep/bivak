@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BIVAK — Marketplace Barter Gear Outdoor</title>
 <meta name="description" content="BIVAK — Barter Item & Value Antar Komunitas. Prototipe marketplace barter gear outdoor untuk ekosistem Pintu Angin.">
-<meta name="theme-color" content="#2783DE">
+<meta name="theme-color" content="#0F7A5A">
 <link rel="canonical" href="https://bivak-three.vercel.app/">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BIVAK">
@@ -25,6 +25,9 @@
 <meta name="twitter:image" content="https://bivak-three.vercel.app/assets/og-bivak.jpg">
 <link rel="icon" href="assets/logo-bivak-256.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/logo-bivak-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
   --text:#2C2C2B; --muted:#7D7A75; --canvas:#FFFFFF; --soft:#F9F8F7;
@@ -326,6 +329,116 @@ footer .row{display:flex; justify-content:space-between; gap:16px; flex-wrap:wra
   .tabs{order:3; width:100%; margin-left:0}
   .sheet .content{padding:18px}
 }
+/* ================= TEMA ALAM: hutan, senja, sabana ================= */
+:root{
+  --pine:#0F7A5A; --pine-dark:#0C6248; --leaf:#48A86B; --lime:#8DC63F;
+  --sunset:#D9822B; --clay:#C4643F; --sky:#2C9CDB; --plum:#7C5CD6;
+  --mint:#DFF4EC; --sand:#FBF1DF;
+}
+body{
+  font-family:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:
+    radial-gradient(900px 430px at 6% -10%, #E7F6EE 0%, rgba(231,246,238,0) 70%),
+    radial-gradient(820px 400px at 102% -4%, #FDEFDB 0%, rgba(253,239,219,0) 66%),
+    var(--canvas);
+}
+.appbar{
+  background:linear-gradient(90deg, rgba(255,255,255,.94), rgba(223,244,236,.94));
+  border-bottom:1px solid #D8E7DD;
+}
+.brand .mark{
+  background:linear-gradient(135deg,#0F7A5A 0%,#3E9B62 55%,#8DC63F 100%);
+  box-shadow:0 4px 14px rgba(15,122,90,.3);
+}
+.brand b{font-weight:800}
+.brand small{color:#3E7C63}
+.tabs button{font-weight:600}
+.tabs button:hover{background:#EAF5EE; color:var(--pine-dark)}
+.tabs button[aria-selected="true"]{
+  background:linear-gradient(135deg,var(--pine),var(--leaf)); color:#fff;
+  box-shadow:0 4px 14px rgba(15,122,90,.28);
+}
+.tabs .badge{background:linear-gradient(135deg,#E0553F,#E8863C)}
+.btn{font-weight:600}
+.btn.primary{
+  background:linear-gradient(135deg,var(--pine),var(--leaf)); border-color:transparent;
+  box-shadow:0 8px 20px rgba(15,122,90,.28);
+}
+.btn.primary:hover{background:linear-gradient(135deg,var(--pine-dark),#3E9B62)}
+.btn.ok{background:var(--mint); border-color:#BFE3D3; color:var(--pine-dark)}
+.avatar{background:linear-gradient(135deg,var(--pine),var(--lime)); color:#fff}
+.me{border-left:1px solid #D8E7DD}
+
+.hero{
+  position:relative; overflow:hidden; border-bottom:1px solid #E2E9DE;
+  background:linear-gradient(155deg,#E9F6EE 0%,#F7F3E5 52%,#FDEADB 100%);
+}
+.hero::before{
+  content:""; position:absolute; inset:-30% -10% auto auto; width:70%; height:190%;
+  background:repeating-radial-gradient(circle at 70% 30%, rgba(15,122,90,.09) 0 1.5px, rgba(15,122,90,0) 1.5px 30px);
+  pointer-events:none;
+}
+.hero .inner{position:relative; z-index:1}
+.eyebrow{background:linear-gradient(135deg,var(--mint),var(--sand)); color:var(--pine-dark)}
+h1{
+  font-weight:800;
+  background:linear-gradient(115deg,#0C5741 0%,#2F8F5F 45%,#C47130 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+.searchbar{border-color:#DCE7DC; box-shadow:0 8px 22px rgba(15,122,90,.09)}
+.stats .stat:nth-of-type(1){background:var(--mint); border-color:#C6E6D7}
+.stats .stat:nth-of-type(2){background:var(--sand); border-color:#EFDFC2}
+.stats .stat:nth-of-type(3){background:#E7F0FC; border-color:#CFE2F7}
+.stats .stat:nth-of-type(4){background:#F2EAFC; border-color:#E0D2F5}
+.hero-art .swap{
+  background:linear-gradient(135deg,var(--pine),var(--lime));
+  box-shadow:0 8px 22px rgba(15,122,90,.38);
+}
+
+.section-head h2{position:relative; padding-left:15px; font-weight:800}
+.section-head h2::before{
+  content:""; position:absolute; left:0; top:.16em; bottom:.16em; width:6px;
+  border-radius:99px; background:linear-gradient(var(--pine),var(--lime));
+}
+.chip{font-weight:600}
+.chip:hover{background:#EAF5EE; color:var(--pine-dark); border-color:#C6E6D7}
+.chip[aria-pressed="true"]{background:linear-gradient(135deg,#12362A,#2F6B51); border-color:transparent}
+
+.card{border-radius:18px; border-color:#E4EBE0}
+.card.hoverable:hover{box-shadow:0 14px 34px rgba(15,122,90,.15); border-color:#BFE0CE}
+.thumb{background:linear-gradient(140deg,#E3F1E8,#F8EFDE)}
+.tag.b{background:var(--mint); border-color:#BFE3D3; color:var(--pine-dark)}
+.tag.g{background:#E8F6DC; border-color:#D2E9B6; color:#4A7220}
+.tag.o{background:#FCEBD8; border-color:#F2DBBE; color:#9C5A24}
+.tag.p{background:#F1EAFB; border-color:#E0D2F5; color:#6B45A0}
+.pill.b{background:var(--mint); color:var(--pine-dark)}
+.pill.g{background:#E8F6DC; color:#4A7220}
+.wants{background:linear-gradient(135deg,#F2F7F0,#FBF3E6)}
+.match{background:linear-gradient(135deg,#E7F6EC,#F1F9DE); color:var(--pine-dark)}
+.value{font-weight:700}
+.empty{background:linear-gradient(135deg,#F4F8F2,#FBF4E9); border-color:#DDE7DA}
+
+.field select:focus,.field input:focus,.field textarea:focus,.composer input:focus{
+  border-color:var(--pine); box-shadow:0 0 0 3px var(--mint);
+}
+.pickrow input{accent-color:var(--pine)}
+.sheet{border-radius:20px}
+.sheet .head{background:linear-gradient(90deg,#FFFFFF,#EFF8F3)}
+.owner{background:linear-gradient(135deg,#F2F7F0,#FBF3E6)}
+.calc{background:linear-gradient(135deg,#F3F8F1,#FBF4E8)}
+.msg.mine{background:linear-gradient(135deg,var(--mint),#EDF7DC); color:var(--pine-dark)}
+.steps .s.on{background:linear-gradient(135deg,var(--pine),var(--leaf))}
+.toast.ok{background:linear-gradient(135deg,var(--pine),var(--leaf))}
+.toast.warn{background:linear-gradient(135deg,#C47130,#DFA13C)}
+footer{border-top:1px solid #E2E9DE}
+
+/* logo menyatu dengan latar, tanpa kotak putih */
+.logo-sq{background:transparent; border:0; box-shadow:none}
+.logo-sq img{width:100%; height:100%}
+.emblem{background:transparent}
+.brand .mark{background:transparent; box-shadow:none; border-radius:0}
+.brand .mark img{width:38px; height:38px}
+
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important} html{scroll-behavior:auto}}
 </style>
 </head>
@@ -687,11 +800,28 @@ async function cloudPull(){
         messages:msgs.filter(m=>m.offer_id===r.id).map(m=>({id:m.id, from:m.from_id || m.from_label || "sys", body:m.body||"", at:new Date(m.at||Date.now()).getTime()}))
       })));
     }
+    dropDemoData();
     save();
   }catch(err){}
   const me = meProfile();
   if(me && me.isModerator) await cloudPullReports();
   cloudRealtime();
+}
+
+/* ---- buang data contoh begitu aplikasi memakai server sungguhan ---- */
+function dropDemoData(){
+  if(!cloudOn()) return;
+  const keepId = x => x && (x.remote || isUuid(x.id));
+  db.listings = db.listings.filter(keepId);
+  db.offers = db.offers.filter(keepId);
+  db.profiles = db.profiles.filter(p => p.id === ME || isUuid(p.id));
+  db.transactions = (db.transactions||[]).filter(t => isUuid(t.offerId));
+  db.reports = (db.reports||[]).filter(r => isUuid(String(r.targetId)));
+  const me = db.profiles.find(p => p.id === ME);
+  if(me && me.demoCleared !== true){
+    me.demoCleared = true;
+    if(typeof me.rating !== "number"){ me.reputation = 0; me.deals = 0; me.verified = false; }
+  }
 }
 
 /* ---- realtime: barang, penawaran, dan chat masuk tanpa refresh ---- */
@@ -841,7 +971,7 @@ async function syncProfileFromServer(){
     Object.keys(P2R).forEach(k=>{ const v = data[P2R[k]]; if(v!==null && v!==undefined && v!=="") me[k] = v; });
     if(data.birth_date) me.birth = String(data.birth_date).slice(0,10);
     if(data.registered_at) me.registeredAt = new Date(data.registered_at).getTime();
-    if(typeof data.rating === "number") me.rating = data.rating;
+    if(typeof data.rating === "number"){ me.rating = data.rating; me.reputation = data.rating; }
     if(typeof data.deals_count === "number") me.deals = data.deals_count;
     if(typeof data.verified === "boolean") me.verified = data.verified;
     if(typeof data.is_moderator === "boolean") me.isModerator = data.is_moderator;
