@@ -718,6 +718,35 @@ function rtSync(kind){
   }, 600);
 }
 
+async function uploadPhoto(blob){
+  if(!cloudOn()) return null;
+  const name = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : String(Date.now());
+  const path = auth.user.id + "/" + name + ".webp";
+  try{
+    const {error} = await sb.storage.from("barter-photos").upload(path, blob, {contentType:"image/webp", upsert:false});
+    if(error){ toast("Foto gagal diunggah: "+error.message, "warn"); return null; }
+    const {data} = sb.storage.from("barter-photos").getPublicUrl(path);
+    return (data && data.publicUrl) || null;
+  }catch(err){ toast("Foto gagal diunggah", "warn"); return null; }
+}
+
+async function cloudSaveReport(r){
+  if(!cloudOn()) return;
+  try{
+    await sb.from("barter_reports").insert({
+      reporter_id: auth.user.id, target_type: r.targetType,
+      target_id: String(r.targetId), reason: r.reason || "Perlu ditinjau moderator", status: "baru"
+    });
+  }catch(err){}
+}
+
+async function cloudSaveTransaction(offerId){
+  if(!cloudOn() || !isUuid(offerId)) return;
+  try{
+    await sb.from("barter_transactions").insert({offer_id: offerId, status: "selesai", agreed_at: new Date().toISOString()});
+  }catch(err){}
+}
+
 async function cloudSaveListing(l){
   if(!cloudOn() || !l || !isUuid(l.id) || l.ownerId !== auth.user.id) return;
   try{
@@ -1175,7 +1204,16 @@ function addPhotos(files){
         const s = Math.min(1, 900/Math.max(img.width,img.height));
         cv.width = img.width*s; cv.height = img.height*s;
         cv.getContext("2d").drawImage(img,0,0,cv.width,cv.height);
-        draftPhotos.push(cv.toDataURL("image/webp",.72)); paintPhotos();
+        if(cloudOn() && cv.toBlob){
+          toast("Mengunggah foto…");
+          cv.toBlob(async blob=>{
+            if(!blob){ draftPhotos.push(cv.toDataURL("image/webp",.72)); paintPhotos(); return; }
+            const url = await uploadPhoto(blob);
+            if(url){ draftPhotos.push(url); paintPhotos(); toast("Foto terunggah","ok"); }
+          }, "image/webp", .72);
+        } else {
+          draftPhotos.push(cv.toDataURL("image/webp",.72)); paintPhotos();
+        }
       };
       img.src = e.target.result;
     };
@@ -1247,8 +1285,9 @@ function toggleFav(id){ const l=listing(id); l.favorite=!l.favorite; save(); ren
 function archive(id){ const l=listing(id); l.status="arsip"; save(); render(); cloudSaveListing(l); toast("Listing diarsipkan"); }
 function unarchive(id){ const l=listing(id); l.status="aktif"; save(); render(); cloudSaveListing(l); toast("Listing aktif kembali","ok"); }
 function report(id){
-  db.reports.push({id:uid("r"), reporterId:ME, targetType:"listing", targetId:id, reason:"Perlu ditinjau moderator", status:"baru"});
-  save(); toast("Laporan dikirim ke moderator BIVAK","warn");
+  const r = {id:uid("r"), reporterId:ME, targetType:"listing", targetId:id, reason:"Perlu ditinjau moderator", status:"baru"};
+  db.reports.push(r);
+  save(); cloudSaveReport(r); toast("Laporan dikirim ke moderator BIVAK","warn");
 }
 
 /* ---------- sheet ---------- */
@@ -1473,6 +1512,7 @@ function setStatus(id, status){
     db.offers.filter(x=>x.targetListingId===t.id && x.id!==o.id && openStatuses.includes(x.status))
       .forEach(x=>{ x.status="Tidak terpilih"; x.messages.push({id:uid("m"),from:"sys",body:"Listing sudah selesai dibarter · penawaran tidak terpilih",at:Date.now()}); });
     db.transactions.push({id:uid("tx"), offerId:o.id, status:"selesai", agreedAt:Date.now(), completedAt:Date.now()});
+    cloudSaveTransaction(o.id);
     const me = prof(ME); me.deals += 1; me.reputation = Math.min(5, +(me.reputation + .05).toFixed(2));
     toast("Barter selesai · reputasi diperbarui","ok");
   }
