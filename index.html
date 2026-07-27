@@ -663,14 +663,15 @@ function saveAuth(u){ try{ localStorage.setItem(AUTHKEY, JSON.stringify(u)); }ca
 function setUser(u){
   auth.user = u; auth.status = "ready"; saveAuth(u);
   if(u.id && ME !== u.id){
-    const old = ME; ME = u.id;
-    const seedProfile = db.profiles.find(x=>x.id===old);
-    if(/^u\d+$/.test(old) && seedProfile && !db.profiles.some(x=>x.id===u.id)){
-      seedProfile.id = u.id;
-      db.listings.forEach(l=>{ if(l.ownerId===old) l.ownerId = u.id; });
-      db.offers.forEach(o=>{ if(o.proposerId===old) o.proposerId = u.id; (o.messages||[]).forEach(m=>{ if(m.from===old) m.from = u.id; }); });
-    }
-    if(!db.profiles.some(x=>x.id===u.id)) db.profiles.push({id:u.id, name:u.name||"Anggota baru", city:"", reputation:0, deals:0, verified:false});
+    ME = u.id;
+    /* akun berganti: identitas demo dan sisa data akun sebelumnya tidak boleh diwarisi */
+    db.profiles = db.profiles.filter(p => isUuid(p.id));
+    db.listings = db.listings.filter(l => l.remote || isUuid(l.id));
+    db.offers = db.offers.filter(o => o.remote || isUuid(o.id));
+    db.transactions = (db.transactions||[]).filter(t => isUuid(t.offerId));
+    db.reports = (db.reports||[]).filter(r => isUuid(String(r.targetId)));
+    modReports = [];
+    if(!db.profiles.some(x=>x.id===u.id)) db.profiles.push({id:u.id, name:u.name||"Anggota baru", city:"", reputation:0, deals:0, verified:false, email:u.email||""});
     save();
   }
   const me = meProfile();
@@ -732,6 +733,15 @@ async function signOut(){
   try{ if(sb) await sb.auth.signOut(); }catch(e){}
   try{ localStorage.removeItem(AUTHKEY); }catch(e){}
   auth.user = null; auth.status = "anon"; auth.edit = false;
+  try{ if(rtChannel && sb) sb.removeChannel(rtChannel); }catch(e){}
+  rtChannel = null;
+  /* bersihkan salinan data server di perangkat ini supaya akun berikutnya mulai bersih */
+  db.profiles = db.profiles.filter(p=>!isUuid(p.id));
+  db.listings = db.listings.filter(l=>!l.remote && !isUuid(l.id));
+  db.offers = db.offers.filter(o=>!o.remote && !isUuid(o.id));
+  modReports = [];
+  ME = "u1";
+  save();
   toast("Kamu sudah keluar");
   render();
 }
@@ -967,14 +977,15 @@ async function syncProfileFromServer(){
   const me = meProfile(); if(!me) return;
   try{
     const {data, error} = await sb.from("barter_profiles").select("*").eq("id", auth.user.id).maybeSingle();
-    if(error || !data) return;
+    if(error || !data){ me.reputation = 0; me.deals = 0; me.verified = false; me.isModerator = false; if(auth.user.email) me.email = auth.user.email; save(); return; }
     Object.keys(P2R).forEach(k=>{ const v = data[P2R[k]]; if(v!==null && v!==undefined && v!=="") me[k] = v; });
     if(data.birth_date) me.birth = String(data.birth_date).slice(0,10);
     if(data.registered_at) me.registeredAt = new Date(data.registered_at).getTime();
-    if(typeof data.rating === "number"){ me.rating = data.rating; me.reputation = data.rating; }
-    if(typeof data.deals_count === "number") me.deals = data.deals_count;
-    if(typeof data.verified === "boolean") me.verified = data.verified;
-    if(typeof data.is_moderator === "boolean") me.isModerator = data.is_moderator;
+    me.reputation = Number(data.rating || 0); me.rating = me.reputation;
+    me.deals = Number(data.deals_count || 0);
+    me.verified = !!data.verified;
+    me.isModerator = !!data.is_moderator;
+    if(auth.user.email) me.email = auth.user.email;
     if(me.city && !CITIES.includes(me.city)) CITIES.push(me.city);
     save();
   }catch(err){}
