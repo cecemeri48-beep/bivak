@@ -463,7 +463,6 @@ footer{border-top:1px solid #E2E9DE}
 .hero-art .chip:nth-child(5n){animation-delay:-4.1s}
 .hero-art .chip img{
   width:100%; height:100%; object-fit:contain; display:block;
-  mix-blend-mode:multiply;
   filter:drop-shadow(0 7px 12px rgba(18,58,44,.22));
 }
 /* foto yang latarnya tak bisa dipisah: tampil penuh sebagai kartu foto */
@@ -484,7 +483,6 @@ footer{border-top:1px solid #E2E9DE}
 .thumb img.cut{
   object-fit:contain; padding:9%;
   background:transparent;
-  mix-blend-mode:multiply;
   filter:drop-shadow(0 6px 12px rgba(18,58,44,.16));
   transition:transform .4s cubic-bezier(.2,.7,.3,1);
 }
@@ -578,9 +576,6 @@ footer{border-top:1px solid #E2E9DE}
   .bottomnav button{font-size:11.5px; padding:7px 1px}
   .bottomnav button .tl{text-overflow:clip; letter-spacing:-.01em}
 }
-
-/* foto carrier tetap utuh: jangan dilebur dengan latar kartu */
-.hero-art .chip.solid img,.thumb img.cut[src*="carrier"]{mix-blend-mode:normal}
 
 /* ---------- ANIMASI KARTU BARANG ---------- */
 .grid .card.hoverable{animation:cardIn .55s cubic-bezier(.2,.75,.3,1) both}
