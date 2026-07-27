@@ -721,7 +721,6 @@ const ART = {
 };
 /* foto nyata per kategori — dipakai kalau anggota belum mengunggah foto sendiri */
 const CAT_PHOTO = {
-  "Carrier":"assets/kategori/carrier.webp",
   "Tas daypack":"assets/kategori/daypack.webp",
   "Sepatu gunung":"assets/kategori/sepatu.webp",
   "Sleeping bag":"assets/kategori/sleepingbag.webp",
@@ -733,10 +732,10 @@ const CAT_PHOTO = {
   "Perlengkapan memasak":"assets/kategori/masak.webp"
 };
 /* deretan foto berjalan di bagian sambutan */
-const REEL_A = ["carrier","tenda","sepatu","sleepingbag","daypack"];
-const REEL_B = ["masak","headlamp","trekkingpole","jashujan","matras"];
+const REEL_A = ["tenda","sepatu","sleepingbag","daypack","matras"];
+const REEL_B = ["masak","headlamp","trekkingpole","jashujan"];
 function heroReel(){
-  const chip = n => '<span class="chip'+(n==="carrier"?" solid":"")+'"><img src="assets/kategori/'+n+'.webp" loading="lazy" alt=""></span>';
+  const chip = n => '<span class="chip"><img src="assets/kategori/'+n+'.webp" loading="lazy" alt=""></span>';
   const row = list => { const r = list.map(chip).join(""); return r + r; };
   return '<div class="reel"><div class="reel-track">'+row(REEL_A)+'</div></div>'
        + '<div class="reel rev"><div class="reel-track">'+row(REEL_B)+'</div></div>';
