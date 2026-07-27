@@ -602,7 +602,9 @@ function art(cat, seed=0){
     + '</svg>';
 }
 function thumbOf(l, cls){
-  if(l.photos && l.photos.length) return '<img src="'+l.photos[0]+'" alt="'+esc(l.title)+'">';
+  /* buang isi foto yang kosong/rusak supaya tidak jadi gambar putus */
+  const own = (l.photos || []).filter(x => typeof x === "string" && x.trim());
+  if(own.length) return '<img src="'+own[0]+'" alt="'+esc(l.title)+'">';
   const p = CAT_PHOTO[l.category];
   if(p) return '<img src="'+p+'" loading="lazy" alt="Foto contoh kategori '+esc(l.category)+'">'
     + '<span class="catref">Foto contoh kategori</span>';
