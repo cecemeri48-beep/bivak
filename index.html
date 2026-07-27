@@ -432,6 +432,16 @@ h1{
 .toast.warn{background:linear-gradient(135deg,#C47130,#DFA13C)}
 footer{border-top:1px solid #E2E9DE}
 
+/* penanda foto contoh kategori, bukan foto barang aslinya */
+.thumb{position:relative}
+.catref{
+  position:absolute; left:8px; bottom:8px; z-index:2;
+  padding:3px 8px; border-radius:999px;
+  background:rgba(12,98,72,.82); color:#fff;
+  font-size:10.5px; font-weight:700; letter-spacing:.02em;
+  backdrop-filter:blur(4px); pointer-events:none;
+}
+
 /* ---------- NAVIGASI: tab atas + bilah bawah di layar kecil ---------- */
 .appbar .tabs button{display:inline-flex; align-items:center; gap:7px}
 .appbar .tabs button svg{width:18px; height:18px; flex:0 0 auto}
@@ -568,6 +578,19 @@ const ART = {
   "Jas hujan":["#E5F2FC","#2783DE","M50 20c8 0 10 6 18 10l10 6-6 14-6-3v33H34V47l-6 3-6-14 10-6c8-4 10-10 18-10z M50 20v58"],
   "Perlengkapan memasak":["#F0EFED","#7D7A75","M24 40h40v22c0 8-5 12-12 12H36c-7 0-12-4-12-12z M64 46h12v10H64z M32 40V28 M44 40V24 M56 40V28"]
 };
+/* foto nyata per kategori — dipakai kalau anggota belum mengunggah foto sendiri */
+const CAT_PHOTO = {
+  "Carrier":"assets/kategori/carrier.webp",
+  "Tas daypack":"assets/kategori/daypack.webp",
+  "Sepatu gunung":"assets/kategori/sepatu.webp",
+  "Sleeping bag":"assets/kategori/sleepingbag.webp",
+  "Tenda":"assets/kategori/tenda.webp",
+  "Matras":"assets/kategori/matras.webp",
+  "Trekking pole":"assets/kategori/trekkingpole.webp",
+  "Headlamp":"assets/kategori/headlamp.webp",
+  "Jas hujan":"assets/kategori/jashujan.webp",
+  "Perlengkapan memasak":"assets/kategori/masak.webp"
+};
 function art(cat, seed=0){
   const a = ART[cat] || ART["Matras"];
   const rot = (seed%2 ? 4 : -3);
@@ -580,6 +603,9 @@ function art(cat, seed=0){
 }
 function thumbOf(l, cls){
   if(l.photos && l.photos.length) return '<img src="'+l.photos[0]+'" alt="'+esc(l.title)+'">';
+  const p = CAT_PHOTO[l.category];
+  if(p) return '<img src="'+p+'" loading="lazy" alt="Foto contoh kategori '+esc(l.category)+'">'
+    + '<span class="catref">Foto contoh kategori</span>';
   return art(l.category, l.id.length);
 }
 
