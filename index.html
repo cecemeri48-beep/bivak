@@ -341,8 +341,9 @@ footer .row{display:flex; justify-content:space-between; gap:16px; flex-wrap:wra
     <span class="spacer"></span>
     <button class="btn primary" onclick="go('tambah')">+ Tambah barang</button>
     <div class="me">
-      <span class="avatar" id="meAvatar">NI</span>
-      <span class="who"><b id="meName">—</b><span id="meCity">—</span></span>
+      <span class="avatar" id="meAvatar" onclick="go('profil')" title="Buka profil saya" style="cursor:pointer">NI</span>
+      <span class="who" onclick="go('profil')" title="Buka profil saya" style="cursor:pointer"><b id="meName">—</b><span id="meCity">—</span></span>
+      <button class="btn sm" onclick="go('profil')" title="Profil saya">Profil</button>
       <button class="btn sm" id="authBtn" onclick="signOut()" title="Keluar akun">Keluar</button>
     </div>
   </div>
