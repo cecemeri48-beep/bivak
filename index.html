@@ -821,9 +821,24 @@ function resetAll(){ localStorage.removeItem(KEY); db = load(); go(state.tab); t
 const prof = id => db.profiles.find(p=>p.id===id) || {name:"?", city:"-", reputation:0};
 const listing = id => db.listings.find(l=>l.id===id);
 const myListings = () => db.listings.filter(l=>l.ownerId===ME);
-const incoming = () => db.offers.filter(o=>{const t=listing(o.targetListingId); return t && t.ownerId===ME});
-const outgoing = () => db.offers.filter(o=>o.proposerId===ME);
 const openStatuses = ["Diajukan","Negosiasi","Disetujui"];
+/* Satu penawaran aktif dengan barang, tujuan, dan nilai yang sama cukup tampil sekali. */
+function offerKey(o){
+  const items = (o.items||[]).map(i=>i.listingId+":"+Number(i.valueSnapshot||0)).sort().join(",");
+  return [o.proposerId,o.targetListingId,items,Number(o.cashAdjustment||0),o.status||""].join("|");
+}
+function uniqueOffers(rows){
+  const seen = new Set();
+  return rows.filter(o=>{
+    /* Riwayat selesai/ditolak tetap utuh; hanya penawaran aktif ganda yang disaring. */
+    if(!openStatuses.includes(o.status)) return true;
+    const key = offerKey(o);
+    if(seen.has(key)) return false;
+    seen.add(key); return true;
+  });
+}
+const incoming = () => uniqueOffers(db.offers.filter(o=>{const t=listing(o.targetListingId); return t && t.ownerId===ME}));
+const outgoing = () => uniqueOffers(db.offers.filter(o=>o.proposerId===ME));
 const pillClass = s => ({"Diajukan":"b","Negosiasi":"o","Disetujui":"p","Selesai":"g","Ditolak":"r","Dibatalkan":"r","Tidak terpilih":""}[s]||"");
 function offerValue(o){ return o.items.reduce((a,i)=>a+i.valueSnapshot,0); }
 function matchReason(l){
@@ -1556,7 +1571,10 @@ function offerCard(o){
       ${o.cashAdjustment?`<div class="line"><span>Usulan tunai</span><b>${rp(Math.abs(o.cashAdjustment))} ${o.cashAdjustment>0?"dari penawar":"dari pemilik"}</b></div>`:""}
     </div>
     ${last?`<div style="margin-top:12px;font-size:13.5px;color:var(--muted)">💬 ${esc(last.body.slice(0,90))}${last.body.length>90?"…":""}</div>`:""}
-    <div style="margin-top:14px"><button class="btn sm primary" onclick="openOffer('${o.id}')">Buka negosiasi</button></div>
+    <div style="margin-top:14px;display:flex;gap:8px">
+      <button class="btn sm primary" onclick="openOffer('${o.id}')">Buka negosiasi</button>
+      ${o.proposerId===ME && ["Diajukan","Negosiasi"].includes(o.status)?`<button class="btn sm" onclick="editOffer('${o.id}')">Edit</button>`:""}
+    </div>
   </article>`;
 }
 
@@ -1829,9 +1847,14 @@ function submitOffer(){
   const t = listing(pick.targetId);
   if(t.status!=="aktif"){ toast("Listing sedang dicadangkan","warn"); return; }
   const note = (document.getElementById("note").value||"").trim();
+  const proposedItems = pick.items.map(id=>({listingId:id, valueSnapshot:listing(id).appraisedValue}));
+  const duplicate = db.offers.find(x=>x.proposerId===ME && x.targetListingId===t.id
+    && openStatuses.includes(x.status)
+    && offerKey(x) === [ME,t.id,proposedItems.map(i=>i.listingId+":"+Number(i.valueSnapshot||0)).sort().join(","),Number(pick.cash||0),"Diajukan"].join("|"));
+  if(duplicate){ closeSheet(); state.box="terkirim"; go("penawaran"); toast("Penawaran yang sama sudah terkirim","warn"); return; }
   const o = {
     id:nid("o"), targetListingId:t.id, proposerId:ME,
-    items:pick.items.map(id=>({listingId:id, valueSnapshot:listing(id).appraisedValue})),
+    items:proposedItems,
     cashAdjustment:pick.cash, note, status:"Diajukan", createdAt:Date.now(),
     messages:[
       {id:nid("m"), from:ME, body: note || "Saya ajukan barter untuk barang ini.", at:Date.now()},
@@ -1859,7 +1882,7 @@ function openOffer(id){
     if(o.status==="Negosiasi") acts.push(["Setujui barter","setStatus('"+id+"','Disetujui')","ok"],["Tolak","setStatus('"+id+"','Ditolak')","danger"]);
     if(o.status==="Disetujui") acts.push(["Tandai selesai","setStatus('"+id+"','Selesai')","ok"]);
   }else{
-    if(o.status==="Diajukan"||o.status==="Negosiasi") acts.push(["Batalkan penawaran","setStatus('"+id+"','Dibatalkan')","danger"]);
+    if(o.status==="Diajukan"||o.status==="Negosiasi") acts.push(["Edit penawaran","editOffer('"+id+"')",""],["Batalkan penawaran","setStatus('"+id+"','Dibatalkan')","danger"]);
     if(o.status==="Disetujui") acts.push(["Konfirmasi barter selesai","setStatus('"+id+"','Selesai')","ok"]);
   }
   const body = `
@@ -1909,6 +1932,34 @@ function openOffer(id){
     </div>`;
   openSheet("Negosiasi barter", body);
   const th = document.getElementById("thread"); if(th) th.scrollTop = th.scrollHeight;
+}
+function editOffer(id){
+  const o = db.offers.find(x=>x.id===id);
+  if(!o || o.proposerId!==ME || !["Diajukan","Negosiasi"].includes(o.status)){
+    toast("Penawaran ini tidak dapat diedit","warn"); return;
+  }
+  const t = listing(o.targetListingId);
+  const body = `<form onsubmit="saveOfferEdit(event,'${id}')" style="display:grid;gap:16px">
+    <div class="hint">Ubah nilai tunai atau catatan sebelum penawaran disetujui. Barang yang ditawarkan tetap sama.</div>
+    <div class="pickrow" style="cursor:default"><span class="t"><b>${esc(t.title)}</b><span>${o.items.length} barang ditawarkan · ${rp(offerValue(o))}</span></span></div>
+    <div class="field"><label for="editCash">Usulan tunai dari kamu (Rp)</label><input id="editCash" type="number" min="0" step="10000" value="${Math.max(0,Number(o.cashAdjustment||0))}" required></div>
+    <div class="field"><label for="editNote">Pesan untuk pemilik</label><textarea id="editNote" rows="4" placeholder="Contoh: Bisa bertemu Sabtu pagi?">${esc(o.note||"")}</textarea></div>
+    <button class="btn primary" type="submit">Simpan perubahan</button>
+  </form>`;
+  openSheet("Edit penawaran",body);
+}
+function saveOfferEdit(event,id){
+  event.preventDefault();
+  const o = db.offers.find(x=>x.id===id);
+  if(!o) return;
+  const cash = Math.max(0,Number(document.getElementById("editCash").value||0));
+  const note = (document.getElementById("editNote").value||"").trim();
+  const changed = cash!==Number(o.cashAdjustment||0) || note!==String(o.note||"");
+  if(!changed){ closeSheet(); return; }
+  o.cashAdjustment = cash; o.note = note;
+  o.messages.push({id:nid("m"), from:"sys", body:"Penawaran diperbarui oleh penawar", at:Date.now()});
+  save(); cloudSaveOffer(o); cloudSaveMessage(o.id,o.messages[o.messages.length-1]);
+  toast("Penawaran diperbarui","ok"); openOffer(id);
 }
 function sendMsg(id){
   const inp = document.getElementById("msg"), body = inp.value.trim();
