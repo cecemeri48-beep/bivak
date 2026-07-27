@@ -463,6 +463,7 @@ footer{border-top:1px solid #E2E9DE}
 .hero-art .chip:nth-child(5n){animation-delay:-4.1s}
 .hero-art .chip img{
   width:100%; height:100%; object-fit:contain; display:block;
+  mix-blend-mode:multiply;
   filter:drop-shadow(0 7px 12px rgba(18,58,44,.22));
 }
 /* foto yang latarnya tak bisa dipisah: tampil penuh sebagai kartu foto */
@@ -482,15 +483,18 @@ footer{border-top:1px solid #E2E9DE}
 /* foto kategori tanpa latar, menyatu dengan warna kartu */
 .thumb img.cut{
   object-fit:contain; padding:9%;
-  background:linear-gradient(150deg,#FFFFFF 0%,#E9F5EE 55%,#FBEFDA 100%);
+  background:transparent;
+  mix-blend-mode:multiply;
   filter:drop-shadow(0 6px 12px rgba(18,58,44,.16));
   transition:transform .4s cubic-bezier(.2,.7,.3,1);
 }
+.thumb:has(img.cut){background:linear-gradient(150deg,#FFFFFF 0%,#E9F5EE 55%,#FBEFDA 100%)}
 .card:hover .thumb img.cut{transform:scale(1.07) rotate(-1.2deg)}
 
 @media (prefers-reduced-motion:reduce){
   .hero-art .reel-track,.hero-art .chip{animation:none !important}
-  .thumb img.cut{transition:none}
+  .thumb img.cut{transition:none; animation:none !important}
+  .grid .card.hoverable{animation:none !important}
 }
 
 /* penanda foto contoh kategori, bukan foto barang aslinya */
@@ -573,6 +577,53 @@ footer{border-top:1px solid #E2E9DE}
   /* label tab bawah cukup satu kata, tidak lagi terpotong */
   .bottomnav button{font-size:11.5px; padding:7px 1px}
   .bottomnav button .tl{text-overflow:clip; letter-spacing:-.01em}
+}
+
+/* foto carrier tetap utuh: jangan dilebur dengan latar kartu */
+.hero-art .chip.solid img,.thumb img.cut[src*="carrier"]{mix-blend-mode:normal}
+
+/* ---------- ANIMASI KARTU BARANG ---------- */
+.grid .card.hoverable{animation:cardIn .55s cubic-bezier(.2,.75,.3,1) both}
+.grid .card.hoverable:nth-child(1){animation-delay:.02s}
+.grid .card.hoverable:nth-child(2){animation-delay:.08s}
+.grid .card.hoverable:nth-child(3){animation-delay:.14s}
+.grid .card.hoverable:nth-child(4){animation-delay:.2s}
+.grid .card.hoverable:nth-child(5){animation-delay:.26s}
+.grid .card.hoverable:nth-child(6){animation-delay:.32s}
+.grid .card.hoverable:nth-child(n+7){animation-delay:.38s}
+@keyframes cardIn{
+  from{opacity:0; transform:translateY(16px) scale(.97)}
+  to{opacity:1; transform:none}
+}
+@keyframes thumbFloat{
+  0%,100%{transform:translateY(0) rotate(-1deg) scale(1)}
+  50%{transform:translateY(-6px) rotate(1deg) scale(1.04)}
+}
+/* di perangkat sentuh tidak ada hover, jadi foto bergerak sendiri */
+@media (hover:none){
+  .thumb img.cut{animation:thumbFloat 6.5s ease-in-out infinite}
+  .grid .card:nth-child(2n) .thumb img.cut{animation-delay:-1.6s}
+  .grid .card:nth-child(3n) .thumb img.cut{animation-delay:-3.2s}
+  .grid .card:nth-child(4n) .thumb img.cut{animation-delay:-4.8s}
+}
+
+/* ---------- DERET FOTO JUGA TAMPIL DI PONSEL ---------- */
+@media (max-width:900px){
+  .hero .inner .hero-art{
+    display:flex !important; height:auto; min-height:0; margin-top:10px; order:9;
+  }
+  .hero-art .swap{display:none}
+}
+@media (max-width:640px){
+  .hero-art{gap:9px}
+  .hero-art .chip{width:96px; height:96px; padding:9px; border-radius:18px}
+  .hero-art .chip.solid img{border-radius:18px}
+  .hero-art .reel{
+    -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);
+    mask-image:linear-gradient(90deg,transparent 0,#000 7%,#000 93%,transparent 100%);
+  }
+  .hero-art .reel-track{animation-duration:26s}
+  .hero-art .reel.rev .reel-track{animation-duration:34s}
 }
 
 /* logo menyatu dengan latar, tanpa kotak putih */
