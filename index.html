@@ -688,6 +688,33 @@ async function cloudPull(){
     }
     save();
   }catch(err){}
+  cloudRealtime();
+}
+
+/* ---- realtime: barang, penawaran, dan chat masuk tanpa refresh ---- */
+let rtChannel = null, rtTimer = null;
+function cloudRealtime(){
+  if(!cloudOn() || rtChannel) return;
+  try{
+    rtChannel = sb.channel("bivak-live")
+      .on("postgres_changes", {event:"*", schema:"public", table:"barter_listings"}, ()=>rtSync("barang"))
+      .on("postgres_changes", {event:"*", schema:"public", table:"barter_offers"}, ()=>rtSync("penawaran"))
+      .on("postgres_changes", {event:"*", schema:"public", table:"barter_messages"}, ()=>rtSync("pesan"))
+      .subscribe();
+  }catch(err){ rtChannel = null; }
+}
+function rtSync(kind){
+  clearTimeout(rtTimer);
+  rtTimer = setTimeout(async ()=>{
+    const before = db.offers.reduce((a,o)=>a+(o.messages||[]).length, 0);
+    await cloudPull();
+    const after = db.offers.reduce((a,o)=>a+(o.messages||[]).length, 0);
+    if(state.openOffer && !document.getElementById("scrim").hidden) openOffer(state.openOffer);
+    else render();
+    renderTabs();
+    if(kind==="pesan" && after > before) toast("Ada pesan baru");
+    if(kind==="penawaran") toast("Daftar penawaran diperbarui");
+  }, 600);
 }
 
 async function cloudSaveListing(l){
@@ -802,7 +829,7 @@ function gateForm(){
       <div class="field"><label for="regLandmark">Patokan / catatan pengiriman (opsional)</label><input id="regLandmark" value="${val("landmark")}" placeholder="Dekat masjid, pagar hijau, titipkan ke warung"></div>
       <label style="display:flex;gap:10px;align-items:flex-start;font-size:14.5px;color:#55524e;line-height:1.6">
         <input id="regAgree" type="checkbox" ${done?"checked":""} style="margin-top:3px">
-        <span>Saya setuju aturan barter BIVAK: nilai taksasi hanya referensi negosiasi, BIVAK bukan escrow, dan saya bertanggung jawab atas kondisi barang yang saya tawarkan.</span>
+        <span>Saya setuju <a href="#" onclick="event.preventDefault();openRules()" style="color:var(--brand,#2f6f4e);font-weight:600">aturan komunitas BIVAK</a>: nilai taksasi hanya referensi negosiasi, BIVAK bukan escrow, dan saya bertanggung jawab atas kondisi barang yang saya tawarkan.</span>
       </label>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn primary" type="submit">${done?"Simpan perubahan":"Selesaikan pendaftaran"}</button>
@@ -1224,6 +1251,24 @@ function report(id){
 }
 
 /* ---------- sheet ---------- */
+function openRules(){
+  openSheet("Aturan komunitas BIVAK", `
+    <div style="display:flex;flex-direction:column;gap:14px;font-size:14.5px;line-height:1.7;color:#55524e">
+      <div class="card pad" style="background:var(--soft)">
+        <b>Inti aturannya:</b> BIVAK hanya mempertemukan dan mencatat. Kesepakatan, pemeriksaan barang, dan serah terima adalah tanggung jawab kedua pihak.
+      </div>
+      <div><b>1. Barang yang boleh dibarter</b><br>Hanya perlengkapan outdoor yang kamu miliki sendiri dan sah. Dilarang: barang curian, senjata, obat terlarang, barang palsu yang diakui asli, dan barang rusak yang disembunyikan kerusakannya.</div>
+      <div><b>2. Jujur soal kondisi</b><br>Tulis kondisi apa adanya dan foto bagian yang cacat. Nilai taksasi hanya referensi negosiasi, bukan harga resmi dan bukan jaminan BIVAK.</div>
+      <div><b>3. BIVAK bukan escrow</b><br>Tidak ada uang yang dititipkan ke BIVAK. Selisih tunai diserahkan langsung antar anggota. Risiko transaksi ada pada kedua pihak.</div>
+      <div><b>4. Bertemu dengan aman</b><br>Utamakan tempat ramai pada siang hari, bawa teman, dan periksa barang sebelum tukar. Alamat lengkap serta nomor HP hanya dibuka kepada pihak yang penawarannya sudah kamu setujui.</div>
+      <div><b>5. Hormati orang lain</b><br>Dilarang menghina, memaksa, menawar dengan kasar, atau mengalihkan transaksi ke luar aplikasi untuk menipu. Sekali disepakati, tepati janji atau batalkan lebih awal.</div>
+      <div><b>6. Sekali barter, satu barang</b><br>Barang yang sudah disetujui otomatis berstatus dicadangkan. Jangan menjanjikan satu barang ke beberapa orang sekaligus.</div>
+      <div><b>7. Pelanggaran</b><br>Gunakan tombol <b>Laporkan</b> pada listing yang mencurigakan. Laporan masuk ke moderator; akun yang berulang kali melanggar dapat dihentikan aksesnya.</div>
+      <div class="hint">Dengan memakai BIVAK, kamu dianggap menyetujui aturan di atas. Aturan dapat diperbarui dan versi terbaru selalu tampil di halaman ini.</div>
+      <button class="btn primary" type="button" onclick="closeSheet()">Saya mengerti</button>
+    </div>`);
+}
+
 function openSheet(title, html){
   document.getElementById("sheetTitle").textContent = title;
   document.getElementById("sheetBody").innerHTML = html;
