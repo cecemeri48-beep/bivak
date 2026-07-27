@@ -1041,7 +1041,9 @@ async function cloudPull(){
     });
     if(lr.data){
       const favs = new Set(db.listings.filter(l=>l.favorite).map(l=>l.id));
-      db.listings = db.listings.filter(l=>!l.remote).concat(lr.data.map(r=>{
+      /* Barang yang sudah tersimpan di server dibuang dari salinan lokal agar tidak tampil dua kali. */
+      const cloudIds = new Set(lr.data.map(r=>r.id));
+      db.listings = db.listings.filter(l=>!l.remote && !cloudIds.has(l.id)).concat(lr.data.map(r=>{
         const l = rowToListing(r); l.favorite = favs.has(l.id); return l;
       }));
       db.listings.sort((a,b)=>b.createdAt-a.createdAt);
@@ -1053,7 +1055,8 @@ async function cloudPull(){
         const mr = await sb.from("barter_messages").select("*").in("offer_id", ids).order("at", {ascending:true});
         msgs = mr.data || [];
       }
-      db.offers = db.offers.filter(o=>!o.remote).concat(or_.data.map(r=>({
+      const cloudOfferIds = new Set(or_.data.map(r=>r.id));
+      db.offers = db.offers.filter(o=>!o.remote && !cloudOfferIds.has(o.id)).concat(or_.data.map(r=>({
         id:r.id, targetListingId:r.target_listing_id, proposerId:r.proposer_id,
         items:r.items||[], cashAdjustment:Number(r.cash_adjustment||0), note:r.note||"",
         status:r.status||"Diajukan", createdAt:new Date(r.created_at||Date.now()).getTime(), remote:true,
@@ -1197,7 +1200,9 @@ async function cloudSaveListing(l){
   if(!cloudOn() || !l || !isUuid(l.id) || l.ownerId !== auth.user.id) return;
   try{
     const {error} = await sb.from("barter_listings").upsert(listingToRow(l));
-    if(error) toast("Listing belum tersimpan ke server: "+error.message, "warn");
+    if(error){ toast("Listing belum tersimpan ke server: "+error.message, "warn"); return; }
+    /* Sudah ada di server, jadi salinan ini ditandai agar penarikan berikutnya tidak menduplikasinya. */
+    l.remote = true; save();
   }catch(err){}
 }
 async function cloudSaveOffer(o){
@@ -1690,6 +1695,7 @@ function addPhotos(files){
   if(files.length > 3-draftPhotos.length) toast("Maksimal 3 foto per listing","warn");
 }
 
+let publishing = false;
 function submitListing(ev){
   ev.preventDefault();
   const g = id => document.getElementById(id).value;
@@ -1703,10 +1709,23 @@ function submitListing(ev){
     photos:draftPhotos.slice(0,3), favorite:false, createdAt:Date.now(),
     wants:[{category:g("wc"), keyword:g("wk").trim(), min:+g("wmin")||0, max:+g("wmax")||0}]
   };
+  /* Cegah publikasi ganda akibat tombol tertekan dua kali. */
+  const kembar = db.listings.find(x=>x.ownerId===ME && x.title===l.title && x.category===l.category
+    && Number(x.appraisedValue)===Number(l.appraisedValue) && Date.now()-x.createdAt < 12e4);
+  if(kembar){
+    draftPhotos = [];
+    toast("Barang ini baru saja kamu publikasikan","warn");
+    go("profil"); return;
+  }
+  if(publishing) return;
+  publishing = true;
+  const tombol = ev.target && ev.target.querySelector ? ev.target.querySelector('button[type="submit"]') : null;
+  if(tombol) tombol.disabled = true;
   db.listings.unshift(l); save(); draftPhotos = [];
   cloudSaveListing(l);
   toast("Listing dipublikasikan · status Aktif","ok");
   go("profil");
+  setTimeout(()=>{ publishing = false; }, 1500);
 }
 
 function viewProfil(){
