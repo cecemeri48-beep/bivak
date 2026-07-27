@@ -41,6 +41,16 @@
   --radius:12px;
 }
 *{box-sizing:border-box}
+html,body{max-width:100%; overflow-x:hidden}
+/* baris isian pendaftaran: dua atau tiga kolom di layar lebar, satu kolom di ponsel */
+.frow{display:grid; gap:16px; min-width:0}
+.frow.two{grid-template-columns:1fr 1fr}
+.frow.three{grid-template-columns:1fr 1fr 1fr}
+.frow>*{min-width:0}
+.field input,.field select,.field textarea{max-width:100%}
+@media (max-width:720px){
+  .frow.two,.frow.three{grid-template-columns:1fr}
+}
 html{scroll-behavior:smooth}
 body{
   margin:0; background:var(--canvas); color:var(--text);
@@ -688,7 +698,7 @@ footer{border-top:1px solid #E2E9DE}
    ========================================================= */
 
 const CATS = ["Carrier","Tas daypack","Sepatu gunung","Sleeping bag","Tenda","Matras","Trekking pole","Headlamp","Jas hujan","Perlengkapan memasak"];
-const CITIES = ["Makassar","Gowa","Maros","Takalar","Sinjai"];
+const CITIES = ["Makassar","Gowa","Maros","Takalar","Sinjai","Bantaeng","Barru","Bone","Bulukumba","Enrekang","Jeneponto","Luwu","Luwu Timur","Luwu Utara","Palopo","Pangkajene dan Kepulauan","Parepare","Pinrang","Selayar","Sidenreng Rappang","Soppeng","Tana Toraja","Toraja Utara","Wajo","Mamuju","Majene","Polewali Mandar","Palu","Poso","Donggala","Kendari","Bau-Bau","Kolaka","Konawe","Manado","Bitung","Tomohon","Minahasa","Gorontalo","Jakarta Pusat","Jakarta Utara","Jakarta Barat","Jakarta Selatan","Jakarta Timur","Bandung","Bekasi","Bogor","Cimahi","Cirebon","Depok","Sukabumi","Tasikmalaya","Garut","Karawang","Semarang","Solo","Magelang","Pekalongan","Salatiga","Tegal","Yogyakarta","Sleman","Bantul","Surabaya","Malang","Sidoarjo","Gresik","Kediri","Madiun","Mojokerto","Pasuruan","Probolinggo","Banyuwangi","Jember","Denpasar","Badung","Gianyar","Buleleng","Tabanan","Mataram","Bima","Sumbawa","Lombok Timur","Kupang","Ende","Maumere","Labuan Bajo","Banjarmasin","Banjarbaru","Balikpapan","Samarinda","Bontang","Pontianak","Singkawang","Palangkaraya","Tarakan","Ambon","Ternate","Tual","Jayapura","Sorong","Manokwari","Merauke","Timika","Medan","Binjai","Pematang Siantar","Tebing Tinggi","Padang Sidempuan","Padang","Bukittinggi","Payakumbuh","Pekanbaru","Dumai","Batam","Tanjung Pinang","Jambi","Palembang","Lubuklinggau","Prabumulih","Bengkulu","Bandar Lampung","Metro","Pangkal Pinang","Banda Aceh","Lhokseumawe","Langsa","Serang","Cilegon","Tangerang","Tangerang Selatan"];
 const CONDS = ["Baru","Seperti baru","Bekas terawat","Bekas layak pakai"];
 let ME = "u1";
 const KEY = "bivak.v1";
@@ -1270,17 +1280,17 @@ function gateForm(){
     <div class="section-head"><div><h2>${done?"Ubah data pendaftaran":"Lengkapi data pendaftaran"}</h2><p>Data ini dipakai untuk verifikasi anggota, penentuan kota transaksi, dan kontak saat barter disepakati. Alamat lengkap hanya ditampilkan kepada pihak yang barternya sudah disetujui.</p></div></div>
     <form class="card pad" onsubmit="submitRegistration(event)" style="display:grid;gap:16px">
       <div class="field"><label for="regEmail">Email akun Google</label><input id="regEmail" type="email" readonly value="${esc((auth.user&&auth.user.email)||me.email||"")}"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="frow two">
         <div class="field"><label for="regFull">Nama lengkap (sesuai identitas)</label><input id="regFull" required value="${val("fullName")||esc((auth.user&&auth.user.name)||"")}" placeholder="Contoh: Andi Nietche Saputra"></div>
         <div class="field"><label for="regDisplay">Nama tampilan</label><input id="regDisplay" required value="${val("name")}" placeholder="Nama yang dilihat komunitas"></div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="frow two">
         <div class="field"><label for="regPhone">No. HP / WhatsApp</label><input id="regPhone" required inputmode="tel" value="${val("phone")}" placeholder="08xxxxxxxxxx"></div>
         <div class="field"><label for="regBirth">Tanggal lahir</label><input id="regBirth" type="date" value="${val("birth")}"></div>
       </div>
       <div class="field"><label for="regAddress">Alamat lengkap</label><textarea id="regAddress" required placeholder="Jalan, nomor rumah, RT/RW, kelurahan, kecamatan">${val("address")}</textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
-        <div class="field"><label for="regCity">Kota / Kabupaten</label><input id="regCity" required list="cityList" value="${val("city")}" placeholder="Gowa"><datalist id="cityList">${CITIES.map(c=>`<option>${esc(c)}</option>`).join("")}</datalist></div>
+      <div class="frow three">
+        <div class="field"><label for="regCity">Kota / Kabupaten</label><select id="regCity" required>${CITIES.slice().sort((a,b)=>a.localeCompare(b,"id")).map(c=>`<option ${me.city===c?"selected":""}>${esc(c)}</option>`).join("")}</select></div>
         <div class="field"><label for="regProvince">Provinsi</label><select id="regProvince" required>${PROVINSI.map(p=>`<option ${me.province===p?"selected":""}>${esc(p)}</option>`).join("")}</select></div>
         <div class="field"><label for="regPostal">Kode pos</label><input id="regPostal" required inputmode="numeric" value="${val("postal")}" placeholder="92111"></div>
       </div>
