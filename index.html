@@ -2,22 +2,28 @@
 <html lang="id">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>BIVAK — Marketplace Barter Gear Outdoor</title>
 <meta name="description" content="BIVAK — Barter Item & Value Antar Komunitas. Prototipe marketplace barter gear outdoor untuk ekosistem Pintu Angin.">
 <meta name="theme-color" content="#0F7A5A">
-<link rel="canonical" href="https://bivak-threevercelapp.vercel.app/">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BIVAK">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="canonical" href="https://bivak-pintuangin.vercel.app/">
 <link rel="preconnect" href="https://esm.sh" crossorigin>
 <link rel="preconnect" href="https://owfjqwjfgrhcdvjwbvfi.supabase.co" crossorigin>
 <link rel="preload" as="image" href="assets/img/logo-bivak.png">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="BIVAK">
 <meta property="og:locale" content="id_ID">
-<meta property="og:url" content="https://bivak-threevercelapp.vercel.app/">
+<meta property="og:url" content="https://bivak-pintuangin.vercel.app/">
 <meta property="og:title" content="BIVAK - Barter Item &amp; Value Antar Komunitas">
 <meta property="og:description" content="Tukar, jangan beli. Lawan budaya konsumtif: barang yang masih bagus jangan numpuk, putar ke yang lebih butuh. Nilai taksasi transparan, selisih dihitung otomatis.">
-<meta property="og:image" content="https://bivak-threevercelapp.vercel.app/og-bivak-v3.jpg">
-<meta property="og:image:secure_url" content="https://bivak-threevercelapp.vercel.app/og-bivak-v3.jpg">
+<meta property="og:image" content="https://bivak-pintuangin.vercel.app/og-bivak-v3.jpg">
+<meta property="og:image:secure_url" content="https://bivak-pintuangin.vercel.app/og-bivak-v3.jpg">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -25,7 +31,7 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BIVAK - Barter Item &amp; Value Antar Komunitas">
 <meta name="twitter:description" content="Tukar, jangan beli. Barang yang masih bagus jangan numpuk, putar ke yang lebih butuh.">
-<meta name="twitter:image" content="https://bivak-threevercelapp.vercel.app/og-bivak-v3.jpg">
+<meta name="twitter:image" content="https://bivak-pintuangin.vercel.app/og-bivak-v3.jpg">
 <meta name="twitter:image:alt" content="BIVAK - tukar, jangan beli">
 <link rel="icon" href="assets/img/logo-bivak-256.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/img/logo-bivak-256.png">
@@ -67,7 +73,13 @@ button,a,input,select,textarea{-webkit-tap-highlight-color:rgba(15,122,90,.12)}
 .field input,.field select,.field textarea{max-width:100%}
 @media (max-width:720px){
   .frow.two,.frow.three{grid-template-columns:1fr}
+  /* jaring pengaman: grid inline dua/tiga kolom tetap dipaksa satu kolom di ponsel */
+  [style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr !important}
 }
+/* cegah isian form melebar melewati layar */
+form,.card.pad,.field{min-width:0; max-width:100%}
+.field input,.field select,.field textarea{width:100%; box-sizing:border-box}
+.field select{appearance:auto; text-overflow:ellipsis}
 html{scroll-behavior:smooth}
 body{
   margin:0; background:var(--canvas); color:var(--text);
@@ -576,7 +588,10 @@ footer{border-top:1px solid #E2E9DE}
     display:grid; grid-template-columns:126px 1fr; align-items:stretch;
     border-radius:20px; overflow:hidden;
   }
-  .grid .card.hoverable .thumb{aspect-ratio:1/1; height:100%; border-radius:0}
+  .grid .card.hoverable{min-width:0; max-width:100%}
+  .grid .card.hoverable .thumb{aspect-ratio:auto; width:126px; max-width:126px; min-width:0; height:100%; border-radius:0}
+  .grid .card.hoverable .body{min-width:0; overflow:hidden}
+  .grid .card.hoverable .body *{min-width:0; overflow-wrap:anywhere}
   .grid .card.hoverable .thumb .tags{left:6px; top:6px; gap:4px}
   .grid .card.hoverable .thumb .tags .tag{font-size:10.5px; padding:2px 7px}
   .grid .card.hoverable .thumb .tags .tag.o{display:none}
@@ -594,9 +609,13 @@ footer{border-top:1px solid #E2E9DE}
   .grid .card.hoverable .wants,.grid .card.hoverable .match{
     font-size:11.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .grid .card.hoverable .foot{gap:6px; margin-top:8px}
-  .grid .card.hoverable .foot .btn{min-height:38px; padding:0 8px; font-size:13px}
-  .grid .card.hoverable .foot .btn:not(.primary){flex:0 0 78px}
+  .grid .card.hoverable .foot{gap:6px; margin-top:8px; flex-wrap:wrap; min-width:0}
+  .grid .card.hoverable .foot .btn{
+    min-height:38px; padding:0 8px; font-size:13px; min-width:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .grid .card.hoverable .foot .btn:not(.primary){flex:0 1 68px}
+  .grid .card.hoverable .foot .btn.primary{flex:1 1 92px}
   .grid .card.hoverable:active{transform:scale(.985); transition:transform .12s}
   /* label tab bawah cukup satu kata, tidak lagi terpotong */
   .bottomnav button{font-size:11.5px; padding:7px 1px}
@@ -660,6 +679,46 @@ footer{border-top:1px solid #E2E9DE}
 .brand .mark{background:transparent; box-shadow:none; border-radius:0}
 .brand .mark img{width:38px; height:38px}
 
+/* ---------- OPTIMASI TAMPILAN PONSEL: MODAL, ISIAN, TEKS PANJANG ---------- */
+@media (max-width:900px){
+  /* modal mengikuti tinggi layar sebenarnya; isinya yang digulir, bukan halaman */
+  .scrim{
+    padding:10px 8px calc(10px + env(safe-area-inset-bottom,0px));
+    align-items:center; overflow:hidden;
+    top:var(--vvtop,0px); bottom:auto;
+    height:100dvh; height:var(--vvh,100dvh);
+  }
+  .sheet{
+    display:flex; flex-direction:column; overflow:hidden;
+    max-height:calc(100vh - 20px);
+    max-height:calc(var(--vvh,100dvh) - 20px);
+  }
+  .sheet .head{flex:0 0 auto}
+  .sheet .content{
+    flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain; padding:18px 16px 16px;
+  }
+  /* tombol aksi menempel di dasar modal, tidak pernah tertutup papan ketik */
+  .sheet .content form > div:last-of-type{
+    position:sticky; bottom:0; z-index:4; background:var(--canvas);
+    border-top:1px solid var(--border); padding:10px 0 2px;
+  }
+  .sheet .content form > div:last-of-type .btn{flex:1 1 140px}
+  /* saat isian difokus, papan ketik tidak menutupinya */
+  .sheet .content input,.sheet .content select,.sheet .content textarea{scroll-margin:90px 0}
+  /* teks panjang tanpa spasi tidak lagi melebarkan layar */
+  .kv dd,.kv dt,.msg,.owner .n,.pickrow .t{overflow-wrap:anywhere; min-width:0}
+  .owner,.pickrow,.calc .line{flex-wrap:wrap}
+  .thread{max-height:46dvh}
+  .detail .gal{aspect-ratio:16/10}
+  .photos{grid-template-columns:repeat(3,1fr); gap:8px}
+  /* judul bagian dan tombolnya membungkus ke bawah, tidak berdesakan */
+  .section-head{flex-wrap:wrap; align-items:flex-start; gap:10px}
+  .section-head p{font-size:13.5px}
+  .section-head > div{min-width:0; flex:1 1 100%}
+  /* pengaman terakhir: tidak ada elemen yang boleh melebihi lebar layar */
+  .wrap,main,.card,.section-head,footer .row{max-width:100%; min-width:0}
+}
 @media (prefers-reduced-motion:reduce){*{transition:none!important; animation:none!important} html{scroll-behavior:auto}}
 </style>
 </head>
@@ -691,7 +750,7 @@ footer{border-top:1px solid #E2E9DE}
   <div class="wrap row" style="align-items:center">
     <span style="display:flex;align-items:center;gap:12px">
       <span class="logo-sq sm"><img src="assets/img/logo-reichas-256.png" alt="Logo BIVAK"></span>
-      <span><b>BIVAK</b> — Barter Item &amp; Value Antar Komunitas<br>Prototipe MVP</span>
+      <span><b>BIVAK</b> — Barter Item &amp; Value Antar Komunitas<br>Prototipe MVP · build 2026-07-28c</span>
     </span>
     <span style="display:flex;align-items:center;gap:12px;text-align:right">
       <span>Ekosistem Pintu Angin · Reichas Chelebes<br>Makassar · Gowa · Maros · Takalar</span>
@@ -1566,7 +1625,6 @@ function viewBeranda(){
     <div class="section-head">
       <div><h2>Listing komunitas</h2><p><span id="count">${rows.length}</span> barang siap dibarter · ${PAGE_SIZE} item per halaman</p></div>
       <span class="spacer"></span>
-      <button class="btn sm" onclick="resetAll()">Reset data contoh</button>
     </div>
     <div class="grid" id="results">${cardsHTML(rows)}</div>
   </main>`;
@@ -1679,7 +1737,7 @@ function offerCard(o){
       <div style="width:64px;height:64px;border-radius:10px;overflow:hidden;border:1px solid var(--border);flex:0 0 auto">${t?thumbOf(t):""}</div>
       <div style="flex:1;font-size:14.5px">
         <b>${esc(give.map(g=>g.title).join(" + ")||"—")}</b>
-        <div style="color:var(--muted)">untuk <b style="color:var(--text)">${esc(t?t.title:"—")}</b></div>
+        <div style="color:var(--muted)">untuk <b style="color:var(--text)">${esc(t?t.title:"���")}</b></div>
         <div style="color:var(--muted);font-size:13px;margin-top:4px">dengan ${esc(counterpart.name)} · ★ ${counterpart.reputation.toFixed(1)}</div>
       </div>
     </div>
@@ -1703,11 +1761,11 @@ function viewTambah(){
     <div class="grid two" style="align-items:start">
       <form class="card pad" onsubmit="submitListing(event)" style="display:grid;gap:16px">
         <div class="field"><label for="t">Judul barang</label><input id="t" required placeholder="Contoh: Carrier Consina Alpine 60L"></div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="frow two">
           <div class="field"><label for="c">Kategori</label><select id="c">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
           <div class="field"><label for="k">Kondisi</label><select id="k">${CONDS.map(c=>`<option>${c}</option>`).join("")}</select></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="frow two">
           <div class="field"><label for="v">Nilai taksasi (Rp)</label><input id="v" type="number" min="10000" step="10000" required placeholder="850000"></div>
           <div class="field"><label for="kt">Kota transaksi</label><select id="kt">${CITIES.map(c=>`<option ${prof(ME).city===c?"selected":""}>${c}</option>`).join("")}</select></div>
         </div>
@@ -1720,11 +1778,11 @@ function viewTambah(){
           <span class="hint">Tanpa foto, BIVAK memakai ilustrasi kategori otomatis.</span>
         </div>
         <h3 class="k" style="margin:4px 0 0">Barang incaran</h3>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="frow two">
           <div class="field"><label for="wc">Kategori incaran</label><select id="wc">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
           <div class="field"><label for="wk">Kata kunci</label><input id="wk" placeholder="ultralight, ukuran 42, 60L"></div>
         </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="frow two">
           <div class="field"><label for="wmin">Nilai minimum</label><input id="wmin" type="number" step="50000" placeholder="300000"></div>
           <div class="field"><label for="wmax">Nilai maksimum</label><input id="wmax" type="number" step="50000" placeholder="900000"></div>
         </div>
@@ -2264,6 +2322,28 @@ function setStatus(id, status){
 
 setChrome(false);
 initAuth();
+
+/* ---- papan ketik ponsel: modal mengikuti tinggi layar yang benar-benar terlihat ---- */
+(function(){
+  var vv = window.visualViewport;
+  if(!vv) return;
+  var root = document.documentElement;
+  function syncViewport(){
+    root.style.setProperty("--vvh", vv.height + "px");
+    root.style.setProperty("--vvtop", vv.offsetTop + "px");
+  }
+  vv.addEventListener("resize", syncViewport);
+  vv.addEventListener("scroll", syncViewport);
+  window.addEventListener("orientationchange", function(){ setTimeout(syncViewport, 300); });
+  syncViewport();
+})();
+
+/* ---- mode aplikasi: daftarkan service worker ---- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("sw.js").catch(function(){ /* diabaikan bila gagal */ });
+  });
+}
 </script>
 </body>
 </html>
