@@ -750,7 +750,7 @@ footer{border-top:1px solid #E2E9DE}
   <div class="wrap row" style="align-items:center">
     <span style="display:flex;align-items:center;gap:12px">
       <span class="logo-sq sm"><img src="assets/img/logo-reichas-256.png" alt="Logo BIVAK"></span>
-      <span><b>BIVAK</b> — Barter Item &amp; Value Antar Komunitas<br>Prototipe MVP · build 2026-07-28c</span>
+      <span><b>BIVAK</b> — Barter Item &amp; Value Antar Komunitas<br>Prototipe MVP · build 2026-07-28d</span>
     </span>
     <span style="display:flex;align-items:center;gap:12px;text-align:right">
       <span>Ekosistem Pintu Angin · Reichas Chelebes<br>Makassar · Gowa · Maros · Takalar</span>
@@ -1312,8 +1312,10 @@ async function cloudSaveReport(r){
 async function cloudSaveTransaction(offerId){
   if(!cloudOn() || !isUuid(offerId)) return;
   try{
-    await sb.from("barter_transactions").insert({offer_id: offerId, status: "selesai", agreed_at: new Date().toISOString()});
-  }catch(err){}
+    const {error} = await sb.from("barter_transactions").insert({offer_id: offerId, status: "selesai", agreed_at: new Date().toISOString()});
+    if(error){ toast("Transaksi belum tercatat di server: "+error.message, "warn"); return false; }
+    return true;
+  }catch(err){ toast("Transaksi belum tercatat di server: "+((err&&err.message)||err), "warn"); return false; }
 }
 
 async function cloudSaveListing(l){
@@ -1326,22 +1328,33 @@ async function cloudSaveListing(l){
   }catch(err){}
 }
 async function cloudSaveOffer(o){
-  if(!cloudOn() || !o || !isUuid(o.id)) return;
+  if(!cloudOn() || !o || !isUuid(o.id)) return true;
   try{
-    const {error} = await sb.from("barter_offers").upsert(offerToRow(o));
-    if(error) toast("Penawaran belum tersimpan ke server: "+error.message, "warn");
-  }catch(err){}
+    const row = offerToRow(o);
+    /* Jangan pakai upsert. Upsert dijalankan sebagai INSERT ... ON CONFLICT,
+       sehingga policy INSERT (proposer_id = auth.uid()) selalu ikut diuji.
+       Akibatnya pihak PENERIMA penawaran selalu ditolak RLS saat menyetujui.
+       UPDATE hanya diuji policy UPDATE, yang memang mengizinkan kedua pihak. */
+    const {data, error} = await sb.from("barter_offers").update(row).eq("id", o.id).select("id");
+    if(error){ toast("Penawaran gagal disimpan: "+error.message, "warn"); return false; }
+    if(data && data.length) return true;
+    const {error:e2} = await sb.from("barter_offers").insert(row);
+    if(e2){ toast("Penawaran gagal disimpan: "+e2.message, "warn"); return false; }
+    return true;
+  }catch(err){ toast("Penawaran gagal disimpan: "+((err&&err.message)||err), "warn"); return false; }
 }
 async function cloudSaveMessage(offerId, m){
   if(!cloudOn() || !m || !isUuid(offerId) || !isUuid(m.id)) return;
   try{
-    await sb.from("barter_messages").upsert({
+    const {error} = await sb.from("barter_messages").upsert({
       id:m.id, offer_id:offerId,
       from_id: isUuid(m.from) ? m.from : null,
       from_label: isUuid(m.from) ? null : String(m.from||"sys"),
       body:m.body||"", at:new Date(m.at||Date.now()).toISOString()
     });
-  }catch(err){}
+    if(error){ toast("Pesan belum tersimpan ke server: "+error.message, "warn"); return false; }
+    return true;
+  }catch(err){ toast("Pesan belum tersimpan ke server: "+((err&&err.message)||err), "warn"); return false; }
 }
 
 /* ---- sinkron profil dengan tabel barter_profiles di Supabase ---- */
@@ -2289,16 +2302,28 @@ function sendMsg(id){
     if(state.openOffer===id) openOffer(id); else toast(prof(other).name+" mengirim pesan baru");
   }, 1400);
 }
-function setStatus(id, status){
+async function setStatus(id, status){
   const o = db.offers.find(x=>x.id===id);
   const t = o ? listing(o.targetListingId) : null;
   if(!o || !t){ closeSheet(); toast("Penawaran ini sudah tidak tersedia","warn"); render(); renderTabs(); return; }
+  /* Rekam keadaan sebelum diubah, supaya bisa dikembalikan bila server menolak. */
+  const _me0 = prof(ME);
+  const snap = {
+    offer: o.status,
+    target: t.status,
+    items: o.items.map(i=>{ const l=listing(i.listingId); return l ? {id:l.id, status:l.status} : null; }).filter(Boolean),
+    others: db.offers.filter(x=>x.targetListingId===t.id && x.id!==o.id).map(x=>({id:x.id, status:x.status, n:x.messages.length})),
+    txCount: db.transactions.length,
+    deals: _me0 ? _me0.deals : 0,
+    rep: _me0 ? _me0.reputation : 0
+  };
+  let okMsg = "", okTone = "ok";
   o.status = status;
   o.messages.push({id:nid("m"), from:"sys", body:"Status penawaran berubah menjadi "+status, at:Date.now()});
   if(status==="Disetujui"){
     t.status = "dicadangkan";
     o.items.forEach(i=>{ const l=listing(i.listingId); if(l) l.status="dicadangkan"; });
-    toast("Barter disetujui · barang dicadangkan","ok");
+    okMsg = "Barter disetujui · barang dicadangkan"; okTone = "ok";
   }
   if(status==="Selesai"){
     t.status = "selesai";
@@ -2306,18 +2331,32 @@ function setStatus(id, status){
     db.offers.filter(x=>x.targetListingId===t.id && x.id!==o.id && openStatuses.includes(x.status))
       .forEach(x=>{ x.status="Tidak terpilih"; x.messages.push({id:uid("m"),from:"sys",body:"Listing sudah selesai dibarter · penawaran tidak terpilih",at:Date.now()}); });
     db.transactions.push({id:uid("tx"), offerId:o.id, status:"selesai", agreedAt:Date.now(), completedAt:Date.now()});
-    cloudSaveTransaction(o.id);
     const me = prof(ME); me.deals += 1; me.reputation = Math.min(5, +(me.reputation + .05).toFixed(2));
-    toast("Barter selesai · reputasi diperbarui","ok");
+    okMsg = "Barter selesai · reputasi diperbarui"; okTone = "ok";
   }
   if(status==="Ditolak"||status==="Dibatalkan"){
     if(t.status==="dicadangkan") t.status="aktif";
     o.items.forEach(i=>{ const l=listing(i.listingId); if(l && l.status==="dicadangkan") l.status="aktif"; });
-    toast("Penawaran "+status.toLowerCase()+" · listing kembali aktif","warn");
+    okMsg = "Penawaran "+status.toLowerCase()+" · listing kembali aktif"; okTone = "warn";
   }
   save(); openOffer(id); renderTabs();
-  cloudSaveOffer(o); cloudSaveMessage(o.id, o.messages[o.messages.length-1]);
+  /* Status baru dianggap sah HANYA setelah server menerimanya. */
+  const ok = await cloudSaveOffer(o);
+  if(ok === false){
+    o.status = snap.offer;
+    t.status = snap.target;
+    snap.items.forEach(x=>{ const l = listing(x.id); if(l) l.status = x.status; });
+    snap.others.forEach(x=>{ const y = db.offers.find(z=>z.id===x.id); if(y){ y.status = x.status; y.messages.length = x.n; } });
+    db.transactions.length = snap.txCount;
+    if(_me0){ _me0.deals = snap.deals; _me0.reputation = snap.rep; }
+    o.messages.pop();
+    save(); openOffer(id); renderTabs();
+    return;
+  }
+  cloudSaveMessage(o.id, o.messages[o.messages.length-1]);
   cloudSaveListing(t); o.items.forEach(i=>{ const l = listing(i.listingId); if(l) cloudSaveListing(l); });
+  if(status==="Selesai") cloudSaveTransaction(o.id);
+  if(okMsg) toast(okMsg, okTone);
 }
 
 setChrome(false);
