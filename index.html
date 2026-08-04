@@ -798,6 +798,14 @@ footer{border-top:1px solid #E2E9DE; background:linear-gradient(180deg,transpare
 const CATS = ["Carrier","Tas daypack","Sepatu gunung","Sleeping bag","Tenda","Matras","Trekking pole","Headlamp","Jas hujan","Perlengkapan memasak"];
 const CITIES = ["Makassar","Gowa","Maros","Takalar","Sinjai","Bantaeng","Barru","Bone","Bulukumba","Enrekang","Jeneponto","Luwu","Luwu Timur","Luwu Utara","Palopo","Pangkajene dan Kepulauan","Parepare","Pinrang","Selayar","Sidenreng Rappang","Soppeng","Tana Toraja","Toraja Utara","Wajo","Mamuju","Majene","Polewali Mandar","Palu","Poso","Donggala","Kendari","Bau-Bau","Kolaka","Konawe","Manado","Bitung","Tomohon","Minahasa","Gorontalo","Jakarta Pusat","Jakarta Utara","Jakarta Barat","Jakarta Selatan","Jakarta Timur","Bandung","Bekasi","Bogor","Cimahi","Cirebon","Depok","Sukabumi","Tasikmalaya","Garut","Karawang","Semarang","Solo","Magelang","Pekalongan","Salatiga","Tegal","Yogyakarta","Sleman","Bantul","Surabaya","Malang","Sidoarjo","Gresik","Kediri","Madiun","Mojokerto","Pasuruan","Probolinggo","Banyuwangi","Jember","Denpasar","Badung","Gianyar","Buleleng","Tabanan","Mataram","Bima","Sumbawa","Lombok Timur","Kupang","Ende","Maumere","Labuan Bajo","Banjarmasin","Banjarbaru","Balikpapan","Samarinda","Bontang","Pontianak","Singkawang","Palangkaraya","Tarakan","Ambon","Ternate","Tual","Jayapura","Sorong","Manokwari","Merauke","Timika","Medan","Binjai","Pematang Siantar","Tebing Tinggi","Padang Sidempuan","Padang","Bukittinggi","Payakumbuh","Pekanbaru","Dumai","Batam","Tanjung Pinang","Jambi","Palembang","Lubuklinggau","Prabumulih","Bengkulu","Bandar Lampung","Metro","Pangkal Pinang","Banda Aceh","Lhokseumawe","Langsa","Serang","Cilegon","Tangerang","Tangerang Selatan"];
 const CONDS = ["Baru","Seperti baru","Bekas terawat","Bekas layak pakai"];
+const CHARITY_TARGETS = [
+  { id: "konservasi", label: "🌿 Konservasi Hutan & Gunung", short: "🌿 Konservasi", icon: "🌿", color: "g" },
+  { id: "reboisasi", label: "🌳 Reboisasi & Penanaman Pohon", short: "🌳 Reboisasi", icon: "🌳", color: "g" },
+  { id: "bencana", label: "🚨 Bantuan & Tanggap Bencana", short: "🚨 Bencana", icon: "🚨", color: "r" },
+  { id: "edukasi", label: "📚 Edukasi Safety Pendaki", short: "📚 Edukasi", icon: "📚", color: "b" },
+  { id: "sosial", label: "🤝 Donasi Kemanusiaan Komunitas", short: "🤝 Donasi Sosial", icon: "🤝", color: "p" }
+];
+const BID_INCREMENTS = [10000, 25000, 50000, 100000, 200000, 500000];
 let ME = "u1";
 const KEY = "bivak.v1";
 
@@ -922,7 +930,53 @@ function seed(){
       {id:uid("m"), from:"sys", body:"Status penawaran berubah menjadi Negosiasi", at:t-18*h}
     ]
   }];
-  return {profiles, listings, offers, transactions:[], reports:[]};
+  const auctions = [
+    {
+      id:"auc101", ownerId:"u2", title:"Carrier Deuter Aircontact 55+10L (Special Edition)",
+      category:"Carrier", condition:"Seperti baru", city:"Makassar",
+      photos:["assets/img/carrier.webp"],
+      startingBid:500000, minIncrement:50000, currentBid:850000, highestBidderId:"u4",
+      charityCategory:"konservasi",
+      charityTitle:"🌿 Pembersihan Sampah & Konservasi Gunung Bawakaraeng",
+      charityDescription:"100% hasil lelang disalurkan untuk aksi pembersihan sampah & perbaikan papan petunjuk jalur pendakian Gunung Bawakaraeng.",
+      endTime:t+86400000*2.5, status:"aktif", createdAt:t-36e5*24,
+      bids:[
+        {id:uid("b"), bidderId:"u1", amount:500000, at:t-36e5*18},
+        {id:uid("b"), bidderId:"u3", amount:650000, at:t-36e5*10},
+        {id:uid("b"), bidderId:"u4", amount:850000, at:t-36e5*2}
+      ]
+    },
+    {
+      id:"auc102", ownerId:"u1", title:"Tenda Naturehike Cloud Up 2 Ultralight",
+      category:"Tenda", condition:"Bekas terawat", city:"Gowa",
+      photos:["assets/img/tenda.webp"],
+      startingBid:400000, minIncrement:25000, currentBid:625000, highestBidderId:"u6",
+      charityCategory:"reboisasi",
+      charityTitle:"🌳 Program 500 Bibit Pohon Pinus di Malino",
+      charityDescription:"Hasil lelang sepenuhnya disalurkan untuk pembelian bibit pohon pinus & gerakan aksi tanam pohon bersama.",
+      endTime:t+86400000*1.5, status:"aktif", createdAt:t-36e5*30,
+      bids:[
+        {id:uid("b"), bidderId:"u5", amount:400000, at:t-36e5*20},
+        {id:uid("b"), bidderId:"u2", amount:500000, at:t-36e5*12},
+        {id:uid("b"), bidderId:"u6", amount:625000, at:t-36e5*3}
+      ]
+    },
+    {
+      id:"auc103", ownerId:"u6", title:"Headlamp Ledlenser MH5 Rechargeable 400L",
+      category:"Headlamp", condition:"Seperti baru", city:"Makassar",
+      photos:["assets/img/headlamp.webp"],
+      startingBid:200000, minIncrement:20000, currentBid:340000, highestBidderId:"u3",
+      charityCategory:"bencana",
+      charityTitle:"🚨 Posko Logistik & Peralatan SAR Relawan",
+      charityDescription:"Dana lelang didonasikan untuk pemenuhan kotak P3K & senter emergency tim relawan SAR komunitas.",
+      endTime:t+86400000*4.2, status:"aktif", createdAt:t-36e5*12,
+      bids:[
+        {id:uid("b"), bidderId:"u4", amount:200000, at:t-36e5*8},
+        {id:uid("b"), bidderId:"u3", amount:340000, at:t-36e5*1}
+      ]
+    }
+  ];
+  return {profiles, listings, offers, auctions, transactions:[], reports:[]};
 }
 
 let db = load();
@@ -933,6 +987,7 @@ function normalize(d){
   d.profiles = Array.isArray(d.profiles) ? d.profiles : [];
   d.listings = Array.isArray(d.listings) ? d.listings : [];
   d.offers = Array.isArray(d.offers) ? d.offers : [];
+  d.auctions = (Array.isArray(d.auctions) && d.auctions.length) ? d.auctions : seed().auctions;
   d.transactions = Array.isArray(d.transactions) ? d.transactions : [];
   d.reports = Array.isArray(d.reports) ? d.reports : [];
   d.profiles.forEach(p=>{
@@ -955,6 +1010,14 @@ function normalize(d){
     o.createdAt = Number(o.createdAt) || Date.now();
     o.status = o.status || "Diajukan";
   });
+  d.auctions.forEach(a=>{
+    a.bids = Array.isArray(a.bids) ? a.bids : [];
+    a.startingBid = Number(a.startingBid) || 100000;
+    a.currentBid = Number(a.currentBid) || a.startingBid;
+    a.minIncrement = Number(a.minIncrement) || 25000;
+    a.endTime = Number(a.endTime) || (Date.now() + 86400000 * 3);
+    a.status = a.status || "aktif";
+  });
   return d;
 }
 function load(){
@@ -968,6 +1031,19 @@ function resetAll(){ localStorage.removeItem(KEY); db = load(); go(state.tab); t
 /* Profil yang belum tersinkron tidak boleh membuat tampilan error. */
 const prof = id => db.profiles.find(p=>p.id===id) || {id:id||"", name:"Anggota BIVAK", city:"-", reputation:0, deals:0, verified:false};
 const listing = id => db.listings.find(l=>l.id===id);
+const auction = id => (db.auctions||[]).find(a=>a.id===id);
+function auctionTimeLeft(a){
+  if(!a || a.status==="selesai" || Date.now() >= a.endTime) return "Selesai";
+  const diff = a.endTime - Date.now();
+  const hrs = Math.floor(diff / 36e5);
+  const mins = Math.floor((diff % 36e5) / 6e4);
+  if(hrs >= 24){
+    const days = Math.floor(hrs / 24);
+    return days + " hr " + (hrs % 24) + " jm";
+  }
+  if(hrs > 0) return hrs + " jam " + mins + " mnt";
+  return mins + " mnt";
+}
 const myListings = () => db.listings.filter(l=>l.ownerId===ME);
 const openStatuses = ["Diajukan","Negosiasi","Disetujui"];
 /* Boleh menawar barang yang sama beberapa kali, asalkan barang yang ditawarkan berbeda. */
@@ -1518,9 +1594,10 @@ function regBlock(me){
 
 /* ---------- router ---------- */
 const PAGE_SIZE = 20;
-const state = {tab:"beranda", q:"", cat:"Semua", cond:"Semua", city:"Semua", vmax:0, sort:"baru", box:"masuk", openOffer:null, page:1};
+const state = {tab:"beranda", q:"", cat:"Semua", charityCat:"Semua", cond:"Semua", city:"Semua", vmax:0, sort:"baru", box:"masuk", openOffer:null, page:1};
 const TABS = [
   {id:"beranda", label:"Beranda", short:"Beranda"},
+  {id:"lelang", label:"Lelang Amal", short:"Lelang"},
   {id:"cocok", label:"Cocok untukmu", short:"Cocok"},
   {id:"penawaran", label:"Penawaran", short:"Tawaran"},
   {id:"tambah", label:"Tambah barang", short:"Tambah"},
@@ -1530,6 +1607,7 @@ function go(tab){ state.tab = tab; render(); window.scrollTo({top:0,behavior:"sm
 
 const TAB_ICONS = {
   beranda:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.6 12 4l8 6.6V20a1 1 0 0 1-1 1h-4.2v-5.8H9.2V21H5a1 1 0 0 1-1-1z"/></svg>',
+  lelang:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>',
   cocok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 3l1.9 4.8L17.7 9.7l-4.8 1.9L11 16.4 9.1 11.6 4.3 9.7l4.8-1.9z"/><path d="M18 15.4l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>',
   penawaran:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5h13M13.5 5.5l3 3-3 3"/><path d="M20.5 15.5h-13M10.5 12.5l-3 3 3 3"/></svg>',
   tambah:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.2"/><path d="M12 8.2v7.6M8.2 12h7.6"/></svg>',
@@ -1564,7 +1642,7 @@ function render(){
   document.getElementById("meCity").textContent = me.city + " · ★ " + me.reputation.toFixed(1);
   renderTabs();
   const v = document.getElementById("view");
-  v.innerHTML = ({beranda:viewBeranda, cocok:viewCocok, penawaran:viewPenawaran, tambah:viewTambah, profil:viewProfil}[state.tab])();
+  v.innerHTML = ({beranda:viewBeranda, lelang:viewLelang, cocok:viewCocok, penawaran:viewPenawaran, tambah:viewTambah, profil:viewProfil}[state.tab])();
   const s = document.getElementById("q"); if(s){ s.value = state.q; }
   paintPhotos();
 }
@@ -1655,6 +1733,224 @@ function viewBeranda(){
     </div>
     <div class="grid" id="results">${cardsHTML(rows)}</div>
   </main>`;
+}
+
+/* ================= LELANG AMAL (CHARITY AUCTION) ================= */
+function viewLelang(){
+  const all = db.auctions || [];
+  let rows = all.filter(a => a.status === "aktif" || Date.now() < a.endTime);
+  if(state.charityCat && state.charityCat !== "Semua"){
+    rows = rows.filter(a => a.charityCategory === state.charityCat);
+  }
+  const totalDonasi = all.reduce((acc, a) => acc + (a.currentBid || a.startingBid || 0), 0);
+  const activeCount = rows.length;
+
+  return `<main class="wrap">
+    <section class="card pad" style="margin-bottom:24px;background:linear-gradient(135deg,#064E3B 0%,#0F7A5A 60%,#10B981 100%);color:#fff;border-radius:22px;box-shadow:0 14px 36px rgba(15,122,90,.25)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px">
+        <div style="max-width:640px">
+          <span class="pill" style="background:rgba(255,255,255,.2);color:#fff;backdrop-filter:blur(8px);font-weight:700">♥ Program BIVAK Charity</span>
+          <h2 style="margin:10px 0 6px;font-size:26px;color:#fff;letter-spacing:-.01em">Lelang Barang Outdoor untuk Amal &amp; Konservasi</h2>
+          <p style="margin:0;opacity:.92;font-size:15px;line-height:1.6">Lelang gear outdoor-mu, salurkan 100% hasil penawaran tertinggi untuk pembersihan gunung, reboisasi hutan, atau bantuan bencana. Komunitas bergerak, alam terjaga.</p>
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:12px 18px;text-align:center">
+            <div style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.05em">Estimasi Donasi</div>
+            <div style="font-size:22px;font-weight:800;margin-top:2px">${rp(totalDonasi)}</div>
+          </div>
+          <div style="background:rgba(255,255,255,.15);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);border-radius:16px;padding:12px 18px;text-align:center">
+            <div style="font-size:12px;opacity:.85;text-transform:uppercase;letter-spacing:.05em">Lelang Aktif</div>
+            <div style="font-size:22px;font-weight:800;margin-top:2px">${activeCount} Barang</div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:20px;display:flex;gap:10px">
+        <button class="btn" style="background:#fff;color:#0F7A5A;font-weight:700;border:0" onclick="go('tambah');setTimeout(()=>{setAddMode('lelang')},100)">+ Buat Lelang Amal</button>
+      </div>
+    </section>
+
+    <div class="section-head">
+      <div><h2>Daftar Lelang Berlangsung</h2><p>Pilih barang, tawar dengan kelipatan bid, bantu konservasi lingkungan</p></div>
+    </div>
+
+    <div class="chips" style="margin-bottom:24px">
+      <button class="chip" aria-pressed="${!state.charityCat || state.charityCat==='Semua'}" onclick="state.charityCat='Semua';render()">Semua Kategori Amal</button>
+      ${CHARITY_TARGETS.map(t => `<button class="chip" aria-pressed="${state.charityCat===t.id}" onclick="state.charityCat='${t.id}';render()">${t.label}</button>`).join("")}
+    </div>
+
+    <div class="grid">${rows.length ? rows.map(a => auctionCardHTML(a)).join("") : `<div class="empty" style="grid-column:1/-1"><b>Belum ada lelang amal di kategori ini</b>Jadilah yang pertama melelang gear outdoor untuk amal!<div style="margin-top:14px"><button class="btn primary" onclick="go('tambah');setTimeout(()=>{setAddMode('lelang')},100)">+ Buat Lelang Amal</button></div></div>`}</div>
+  </main>`;
+}
+
+function auctionCardHTML(a){
+  const owner = prof(a.ownerId);
+  const highestBidder = a.highestBidderId ? prof(a.highestBidderId) : null;
+  const target = CHARITY_TARGETS.find(t => t.id === a.charityCategory) || CHARITY_TARGETS[0];
+  const isOwner = a.ownerId === ME;
+  const ended = Date.now() >= a.endTime || a.status === "selesai";
+
+  return `<article class="card hoverable">
+    <div class="thumb">
+      ${thumbOf(a)}
+      <div class="tags">
+        <span class="tag ${target.color}">${target.short}</span>
+        <span class="tag b">${esc(a.category)}</span>
+      </div>
+      <div class="catref" style="background:rgba(16,185,129,.92);left:auto;right:10px">⏳ ${auctionTimeLeft(a)}</div>
+    </div>
+    <div class="body">
+      <h4>${esc(a.title)}</h4>
+      <div class="meta"><span>${esc(a.condition)}</span>·<span>${esc(a.city)}</span>·<span>Oleh ${esc(owner.name)}</span></div>
+      
+      <div style="background:linear-gradient(135deg,#ECFDF5,#F0FDF4);border:1px solid #A7F3D0;border-radius:12px;padding:10px 12px;margin:6px 0">
+        <div style="font-size:12px;color:var(--pine-dark);font-weight:600">${target.icon} ${esc(a.charityTitle || target.label)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(a.charityDescription||"")}</div>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-top:4px">
+        <div>
+          <div style="font-size:12px;color:var(--muted)">Bid Tertinggi Saat Ini</div>
+          <div class="value" style="color:var(--pine-dark);font-size:20px">${rp(a.currentBid)}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:11.5px;color:var(--muted)">Open Bid: ${rp(a.startingBid)}</div>
+          <div style="font-size:11.5px;color:var(--pine-dark);font-weight:600">Kelipatan: +${rp(a.minIncrement)}</div>
+        </div>
+      </div>
+
+      ${highestBidder ? `<div style="font-size:12.5px;color:var(--muted);background:rgba(255,255,255,.8);padding:4px 8px;border-radius:6px;border:1px solid #E2E8F0">👑 Pemimpin Bid: <b>${esc(highestBidder.name)}</b> (${(a.bids||[]).length} penawaran)</div>` : `<div style="font-size:12.5px;color:var(--muted)">Belum ada bid · Jadilah penawar pertama!</div>`}
+
+      <div class="foot" style="margin-top:10px">
+        <button class="btn sm" onclick="openAuctionModal('${a.id}')">Riwayat &amp; Detail</button>
+        <button class="btn sm primary" onclick="openAuctionModal('${a.id}')" ${ended?'disabled':''}>
+          ${ended ? 'Lelang Selesai' : (isOwner ? 'Pantau Lelang' : '⚡ Pasang Bid')}
+        </button>
+      </div>
+    </div>
+  </article>`;
+}
+
+function openAuctionModal(id){
+  const a = auction(id);
+  if(!a) return;
+  const owner = prof(a.ownerId);
+  const highestBidder = a.highestBidderId ? prof(a.highestBidderId) : null;
+  const target = CHARITY_TARGETS.find(t => t.id === a.charityCategory) || CHARITY_TARGETS[0];
+  const minNextBid = a.currentBid + a.minIncrement;
+  const ended = Date.now() >= a.endTime || a.status === "selesai";
+  const isOwner = a.ownerId === ME;
+
+  const bidsHTML = (a.bids || []).slice().reverse().map(b => {
+    const bidder = prof(b.bidderId);
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,.8);border-radius:8px;border:1px solid var(--border);font-size:13.5px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="avatar" style="width:28px;height:28px;font-size:11px">${initials(bidder.name)}</span>
+        <div><b>${esc(bidder.name)}</b> <span style="font-size:11.5px;color:var(--muted)">(${esc(bidder.city)})</span></div>
+      </div>
+      <div style="text-align:right">
+        <b style="color:var(--pine-dark);font-size:14.5px">${rp(b.amount)}</b>
+        <div style="font-size:11px;color:var(--muted)">${ago(b.at)}</div>
+      </div>
+    </div>`;
+  }).join("") || `<div style="color:var(--muted);font-size:13.5px;padding:12px;text-align:center">Belum ada penawaran bid.</div>`;
+
+  const quickBtns = [minNextBid, minNextBid + a.minIncrement, minNextBid + a.minIncrement * 2].map(amt =>
+    `<button class="btn sm ok" onclick="submitBid('${a.id}', ${amt})" style="flex:1">+ ${rp(amt)}</button>`
+  ).join("");
+
+  document.getElementById("sheetTitle").textContent = "Lelang Amal — " + a.title;
+  document.getElementById("sheetBody").innerHTML = `
+    <div class="detail">
+      <div>
+        <div class="gal">${thumbOf(a)}</div>
+        <div class="owner" style="margin-top:16px">
+          <span class="avatar lg">${initials(owner.name)}</span>
+          <div class="n"><b>${esc(owner.name)}</b> <span>Pemilik Barang · ${esc(owner.city)}</span></div>
+          <span class="pill b">Penyelenggara Lelang</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div>
+          <span class="pill g">${target.label}</span>
+          <h3 style="margin:8px 0 4px;font-size:20px">${esc(a.title)}</h3>
+          <div style="font-size:13.5px;color:var(--muted)">Kategori: ${esc(a.category)} · Kondisi: ${esc(a.condition)} · Kota: ${esc(a.city)}</div>
+        </div>
+
+        <div style="background:linear-gradient(135deg,#ECFDF5,#E6F4EA);border:1.5px solid #A7F3D0;border-radius:14px;padding:14px">
+          <div style="font-weight:700;color:var(--pine-dark);font-size:14px">🎯 Target Donasi / Charity:</div>
+          <div style="font-size:14px;color:var(--text);margin-top:4px;font-weight:600">${esc(a.charityTitle || target.label)}</div>
+          <p style="margin:4px 0 0;font-size:13px;color:#4B5563;line-height:1.5">${esc(a.charityDescription||"")}</p>
+        </div>
+
+        <div class="calc" style="background:#F0FDF4;border-color:#BBF7D0">
+          <div class="line"><span>Open Bid (Harga Awal)</span><b>${rp(a.startingBid)}</b></div>
+          <div class="line"><span>Kelipatan Bid Minimum</span><b>${rp(a.minIncrement)}</b></div>
+          <div class="line"><span>Sisa Waktu Lelang</span><b style="color:#D97706">⏳ ${auctionTimeLeft(a)}</b></div>
+          <div class="line total" style="font-size:16px">
+            <span>Bid Tertinggi Saat Ini</span>
+            <b style="color:var(--pine-dark);font-size:22px">${rp(a.currentBid)}</b>
+          </div>
+          ${highestBidder ? `<div style="font-size:12.5px;color:var(--pine-dark);margin-top:4px">👑 Dipimpin oleh: <b>${esc(highestBidder.name)}</b> (${esc(highestBidder.city)})</div>` : ''}
+        </div>
+
+        ${!ended && !isOwner ? `
+          <div style="background:var(--soft);border:1px solid var(--border);border-radius:14px;padding:14px;display:grid;gap:10px">
+            <div style="font-weight:700;font-size:14px">⚡ Pasang Penawaran (Bid Baru)</div>
+            <div style="font-size:12.5px;color:var(--muted)">Penawaran minimal: <b>${rp(minNextBid)}</b> (Nominal saat ini + Kelipatan ${rp(a.minIncrement)})</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              ${quickBtns}
+            </div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <input id="customBidAmt" type="number" step="${a.minIncrement}" min="${minNextBid}" value="${minNextBid}" style="flex:1;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:15px;font-weight:700">
+              <button class="btn primary" onclick="submitCustomBid('${a.id}')">Kirim Bid</button>
+            </div>
+          </div>
+        ` : ended ? `
+          <div class="toast warn" style="position:static;transform:none;width:100%">Lelang telah berakhir. Pemenang tertinggi adalah ${highestBidder ? esc(highestBidder.name) : 'tidak ada'}.</div>
+        ` : `
+          <div class="hint" style="background:var(--mint);padding:10px 14px;border-radius:10px">Ini adalah lelang milikmu. Pantau penawaran anggota lain yang masuk di bawah.</div>
+        `}
+
+        <div>
+          <h4 style="margin:0 0 10px;font-size:15px">📜 Riwayat Penawaran (${(a.bids||[]).length})</h4>
+          <div style="display:grid;gap:8px;max-height:220px;overflow-y:auto;padding-right:4px">
+            ${bidsHTML}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById("scrim").hidden = false;
+}
+
+function submitCustomBid(id){
+  const el = document.getElementById("customBidAmt");
+  if(!el) return;
+  const val = Number(el.value);
+  submitBid(id, val);
+}
+
+function submitBid(id, amount){
+  const a = auction(id);
+  if(!a) return;
+  if(a.ownerId === ME){ toast("Kamu tidak bisa memasang bid pada lelang milikmu sendiri", "warn"); return; }
+  if(Date.now() >= a.endTime || a.status === "selesai"){ toast("Lelang ini sudah berakhir", "warn"); return; }
+  
+  const minRequired = a.bids && a.bids.length ? (a.currentBid + a.minIncrement) : a.startingBid;
+  if(amount < minRequired){
+    toast("Penawaran minimal adalah " + rp(minRequired), "warn");
+    return;
+  }
+
+  a.currentBid = amount;
+  a.highestBidderId = ME;
+  if(!Array.isArray(a.bids)) a.bids = [];
+  a.bids.push({ id: uid("b"), bidderId: ME, amount: amount, at: Date.now() });
+
+  save();
+  toast("Berhasil memasang bid " + rp(amount) + "! Kamu memimpin lelang ini 👑", "ok");
+  openAuctionModal(id);
+  if(state.tab === "lelang") render();
 }
 
 function cardsHTML(rows){
@@ -1782,59 +2078,158 @@ function offerCard(o){
   </article>`;
 }
 
+let addMode = "barter";
+function setAddMode(m){ addMode = m; render(); }
+
 function viewTambah(){
+  const isLelang = addMode === "lelang";
   return `<main class="wrap">
-    <div class="section-head"><div><h2>Tambah barang</h2><p>Maksimal 3 foto per listing (dikompres ke ±300 KB), nilai taksasi dalam Rupiah, dan barang incaran agar pencocokan bekerja.</p></div></div>
+    <div class="section-head">
+      <div>
+        <h2>${isLelang ? "Buat Lelang Barang Amal 🌿" : "Tambah barang barter"}</h2>
+        <p>${isLelang ? "Lelang gear outdoor-mu, salurkan 100% hasil penawaran tertinggi untuk konservasi & donasi sosial." : "Maksimal 3 foto per listing, nilai taksasi dalam Rupiah, dan barang incaran agar pencocokan bekerja."}</p>
+      </div>
+    </div>
+
+    <div class="chips" style="margin-bottom:20px">
+      <button class="chip" aria-pressed="${addMode==='barter'}" onclick="setAddMode('barter')">📦 Listing Barter Biasa</button>
+      <button class="chip" aria-pressed="${addMode==='lelang'}" onclick="setAddMode('lelang')">🌿 Lelang Barang Amal</button>
+    </div>
+
     <div class="grid two" style="align-items:start">
-      <form class="card pad" onsubmit="submitListing(event)" style="display:grid;gap:16px">
-        <div class="field"><label for="t">Judul barang</label><input id="t" required placeholder="Contoh: Carrier Consina Alpine 60L"></div>
-        <div class="frow two">
-          <div class="field"><label for="c">Kategori</label><select id="c">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
-          <div class="field"><label for="k">Kondisi</label><select id="k">${CONDS.map(c=>`<option>${c}</option>`).join("")}</select></div>
-        </div>
-        <div class="frow two">
-          <div class="field"><label for="v">Nilai taksasi (Rp)</label><input id="v" type="number" min="10000" step="10000" required placeholder="850000"></div>
-          <div class="field"><label for="kt">Kota transaksi</label><select id="kt">${CITIES.map(c=>`<option ${prof(ME).city===c?"selected":""}>${c}</option>`).join("")}</select></div>
-        </div>
-        <div class="field"><label for="d">Deskripsi</label><textarea id="d" placeholder="Riwayat pemakaian, kelengkapan, cacat yang perlu diketahui…"></textarea></div>
-        <div class="field">
-          <label>Foto (maksimal 3)</label>
-          <div class="photos" id="photos"></div>
-          <input id="file" type="file" accept="image/*" multiple hidden onchange="addPhotos(this.files)">
-          <button type="button" class="btn sm" onclick="document.getElementById('file').click()">Pilih foto</button>
-          <span class="hint">Tanpa foto, BIVAK memakai ilustrasi kategori otomatis.</span>
-        </div>
-        <h3 class="k" style="margin:4px 0 0">Barang incaran</h3>
-        <div class="frow two">
-          <div class="field"><label for="wc">Kategori incaran</label><select id="wc">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
-          <div class="field"><label for="wk">Kata kunci</label><input id="wk" placeholder="ultralight, ukuran 42, 60L"></div>
-        </div>
-        <div class="frow two">
-          <div class="field"><label for="wmin">Nilai minimum</label><input id="wmin" type="number" step="50000" placeholder="300000"></div>
-          <div class="field"><label for="wmax">Nilai maksimum</label><input id="wmax" type="number" step="50000" placeholder="900000"></div>
-        </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn primary" type="submit">Publikasikan listing</button>
-          <button class="btn" type="button" onclick="go('profil')">Lihat barang saya</button>
-        </div>
-      </form>
+      ${isLelang ? `
+        <form class="card pad" onsubmit="submitAuction(event)" style="display:grid;gap:16px">
+          <div class="field"><label for="atitle">Judul barang lelang</label><input id="atitle" required placeholder="Contoh: Carrier Osprey Atmos AG 65L (Mint)"></div>
+          <div class="frow two">
+            <div class="field"><label for="acat">Kategori</label><select id="acat">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+            <div class="field"><label for="acond">Kondisi</label><select id="acond">${CONDS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+          </div>
+          <div class="frow two">
+            <div class="field"><label for="astarting">Open Bid / Harga Awal (Rp)</label><input id="astarting" type="number" min="10000" step="10000" required value="200000"></div>
+            <div class="field"><label for="aincrement">Kelipatan Bid Minimum</label><select id="aincrement">${BID_INCREMENTS.map(v=>`<option value="${v}">${rp(v)}</option>`).join("")}</select></div>
+          </div>
+          <div class="frow two">
+            <div class="field"><label for="acity">Kota transaksi</label><select id="acity">${CITIES.map(c=>`<option ${prof(ME).city===c?"selected":""}>${c}</option>`).join("")}</select></div>
+            <div class="field"><label for="adur">Durasi Lelang</label><select id="adur">
+              <option value="24">24 Jam (1 Hari)</option>
+              <option value="48">48 Jam (2 Hari)</option>
+              <option value="72" selected>72 Jam (3 Hari)</option>
+              <option value="120">120 Jam (5 Hari)</option>
+              <option value="168">168 Jam (7 Hari)</option>
+            </select></div>
+          </div>
+
+          <div style="background:linear-gradient(135deg,#ECFDF5,#F0FDF4);border:1.5px solid #A7F3D0;border-radius:14px;padding:14px;display:grid;gap:12px">
+            <div style="font-weight:700;color:var(--pine-dark);font-size:14px">🎯 Target Donasi / Charity</div>
+            <div class="field"><label for="acharitycat">Kategori Peruntukan Amal</label><select id="acharitycat">${CHARITY_TARGETS.map(t=>`<option value="${t.id}">${t.label}</option>`).join("")}</select></div>
+            <div class="field"><label for="acharitytitle">Nama Program / Aksi Donasi</label><input id="acharitytitle" required placeholder="Contoh: Pembersihan Sampah &amp; Konservasi Gunung Bawakaraeng"></div>
+            <div class="field"><label for="acharitydesc">Catatan &amp; Penggunaan Dana</label><textarea id="acharitydesc" rows="3" placeholder="Jelaskan ke mana dana donasi akan disalurkan oleh komunitas…"></textarea></div>
+          </div>
+
+          <div class="field"><label for="adesc">Deskripsi kelengkapan barang</label><textarea id="adesc" placeholder="Riwayat pemakaian, kondisi fisik, aksesoris yang disertakan…"></textarea></div>
+
+          <div class="field">
+            <label>Foto barang (maksimal 3)</label>
+            <div class="photos" id="photos"></div>
+            <input id="file" type="file" accept="image/*" multiple hidden onchange="addPhotos(this.files)">
+            <button type="button" class="btn sm" onclick="document.getElementById('file').click()">Pilih foto</button>
+          </div>
+
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" type="submit" style="background:linear-gradient(135deg,#064E3B,#10B981)">🌿 Terbitkan Lelang Amal</button>
+            <button class="btn" type="button" onclick="go('lelang')">Batal</button>
+          </div>
+        </form>
+      ` : `
+        <form class="card pad" onsubmit="submitListing(event)" style="display:grid;gap:16px">
+          <div class="field"><label for="t">Judul barang</label><input id="t" required placeholder="Contoh: Carrier Consina Alpine 60L"></div>
+          <div class="frow two">
+            <div class="field"><label for="c">Kategori</label><select id="c">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+            <div class="field"><label for="k">Kondisi</label><select id="k">${CONDS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+          </div>
+          <div class="frow two">
+            <div class="field"><label for="v">Nilai taksasi (Rp)</label><input id="v" type="number" min="10000" step="10000" required placeholder="850000"></div>
+            <div class="field"><label for="kt">Kota transaksi</label><select id="kt">${CITIES.map(c=>`<option ${prof(ME).city===c?"selected":""}>${c}</option>`).join("")}</select></div>
+          </div>
+          <div class="field"><label for="d">Deskripsi</label><textarea id="d" placeholder="Riwayat pemakaian, kelengkapan, cacat yang perlu diketahui…"></textarea></div>
+          <div class="field">
+            <label>Foto (maksimal 3)</label>
+            <div class="photos" id="photos"></div>
+            <input id="file" type="file" accept="image/*" multiple hidden onchange="addPhotos(this.files)">
+            <button type="button" class="btn sm" onclick="document.getElementById('file').click()">Pilih foto</button>
+            <span class="hint">Tanpa foto, BIVAK memakai ilustrasi kategori otomatis.</span>
+          </div>
+          <h3 class="k" style="margin:4px 0 0">Barang incaran</h3>
+          <div class="frow two">
+            <div class="field"><label for="wc">Kategori incaran</label><select id="wc">${CATS.map(c=>`<option>${c}</option>`).join("")}</select></div>
+            <div class="field"><label for="wk">Kata kunci</label><input id="wk" placeholder="ultralight, ukuran 42, 60L"></div>
+          </div>
+          <div class="frow two">
+            <div class="field"><label for="wmin">Nilai minimum</label><input id="wmin" type="number" step="50000" placeholder="300000"></div>
+            <div class="field"><label for="wmax">Nilai maksimum</label><input id="wmax" type="number" step="50000" placeholder="900000"></div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" type="submit">Publikasikan listing</button>
+            <button class="btn" type="button" onclick="go('profil')">Lihat barang saya</button>
+          </div>
+        </form>
+      `}
       <aside style="display:grid;gap:16px">
+        <div class="card pad" style="background:linear-gradient(135deg,#ECFDF5,#FAF2E5);border-color:#A7F3D0">
+          <h3 class="k" style="color:var(--pine-dark)">♥ Mengapa Lelang Amal BIVAK?</h3>
+          <ul style="margin:0;padding-left:18px;font-size:14px;color:#374151;line-height:1.7">
+            <li>100% hasil penawaran tertinggi disalurkan untuk aksi konservasi atau bencana.</li>
+            <li>Anggota komunitas bebas menentukan nominal open bid &amp; kelipatan bid.</li>
+            <li>Transparansi riwayat penawaran langsung di aplikasi BIVAK.</li>
+          </ul>
+        </div>
         <div class="card pad">
           <h3 class="k">Aturan listing MVP</h3>
           <ul style="margin:0;padding-left:18px;font-size:14.5px;color:#55524e;line-height:1.7">
             <li>Maksimal 5 listing baru per hari per akun.</li>
             <li>Foto divalidasi jenis, ukuran, dan jumlah sebelum unggah.</li>
             <li>Nilai taksasi adalah referensi negosiasi, bukan saldo digital.</li>
-            <li>Selisih nilai disepakati langsung antar pengguna.</li>
           </ul>
-        </div>
-        <div class="card pad" style="background:var(--orange-soft);border-color:#f2ddc7">
-          <b>BIVAK bukan escrow</b>
-          <p style="margin:6px 0 0;font-size:14.5px;color:#7a4a1d">Aplikasi tidak memproses pembayaran dan tidak menjamin pengiriman. Pertemuan dan pengiriman diatur oleh kedua pihak.</p>
         </div>
       </aside>
     </div>
   </main>`;
+}
+
+function submitAuction(e){
+  e.preventDefault();
+  const g = id => { const el = document.getElementById(id); return el ? String(el.value||"").trim() : ""; };
+  const title = g("atitle");
+  if(!title){ toast("Judul barang lelang wajib diisi", "warn"); return; }
+  const cat = g("acat") || CATS[0];
+  const cond = g("acond") || CONDS[0];
+  const city = g("acity") || prof(ME).city || "Makassar";
+  const startingBid = Math.max(10000, Number(g("astarting")) || 100000);
+  const minIncrement = Math.max(5000, Number(g("aincrement")) || 25000);
+  const durHrs = Number(g("adur")) || 72;
+  const charityCat = g("acharitycat") || "konservasi";
+  const charityTitle = g("acharitytitle") || "Donasi &amp; Konservasi Komunitas";
+  const charityDesc = g("acharitydesc") || "Hasil lelang disalurkan untuk kegiatan sosial &amp; konservasi lingkungan.";
+  const desc = g("adesc") || "Kondisi barang lelang amal terawat dan siap pakai.";
+
+  const newAuc = {
+    id: nid("auc"),
+    ownerId: ME,
+    title, category: cat, condition: cond, city, description: desc,
+    photos: draftPhotos.slice(),
+    startingBid, minIncrement, currentBid: startingBid, highestBidderId: null,
+    charityCategory: charityCat, charityTitle, charityDescription: charityDesc,
+    endTime: Date.now() + durHrs * 36e5,
+    status: "aktif", createdAt: Date.now(),
+    bids: []
+  };
+
+  if(!Array.isArray(db.auctions)) db.auctions = [];
+  db.auctions.unshift(newAuc);
+  draftPhotos = [];
+  save();
+  toast("Lelang Amal berhasil diterbitkan! 🌿", "ok");
+  go("lelang");
 }
 
 let draftPhotos = [];
